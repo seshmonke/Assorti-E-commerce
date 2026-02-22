@@ -1,56 +1,63 @@
-import { Bot, Context } from 'grammy';
+import { Bot } from 'grammy';
+import { conversations, createConversation } from '@grammyjs/conversations';
 import { env } from './config/env';
-import { COMMANDS } from './config/constants';
 import { logger } from './utils/logger';
 import { loggingMiddleware } from './middleware/logger';
-import { handleStart, handleHelp } from './handlers/commands';
-import { handleAllProducts } from './handlers/products';
-import { handleAddProduct, handleAddProductFlow } from './handlers/addProduct';
-import { handleSale, handleSaleFlow } from './handlers/sale';
-import { handleCategories, handleAddCategory, handleAddCategoryFlow } from './handlers/categories';
-import { handleGenerateQR, handleGenerateQRFlow } from './handlers/qrCode';
+import { mainMenuKeyboard } from './keyboards/mainMenu';
+import { type MyContext, findProductConversation } from './conversations/findProduct';
+import { addProductConversation } from './conversations/addProduct';
+import { findCategoryConversation } from './conversations/findCategory';
+import { addCategoryConversation } from './conversations/addCategory';
+import { showProductsConversation } from './conversations/showProducts';
 
-// Создаем экземпляр бота
-export const bot = new Bot(env.BOT_TOKEN);
+// Создаём экземпляр бота с типизированным контекстом
+export const bot = new Bot<MyContext>(env.BOT_API_KEY);
 
 // Middleware
 bot.use(loggingMiddleware);
 
-// Команды
-bot.command('start', handleStart);
-bot.command('help', handleHelp);
+// Подключаем conversations plugin
+bot.use(conversations());
 
-// Обработчики текстовых сообщений (кнопки)
-bot.hears(COMMANDS.ALL_PRODUCTS, handleAllProducts);
-bot.hears(COMMANDS.ADD_PRODUCT, handleAddProduct);
-bot.hears(COMMANDS.SALE, handleSale);
-bot.hears(COMMANDS.CATEGORIES, handleCategories);
-bot.hears(COMMANDS.GENERATE_QR, handleGenerateQR);
+// Регистрируем все conversations
+bot.use(createConversation(findProductConversation));
+bot.use(createConversation(addProductConversation));
+bot.use(createConversation(findCategoryConversation));
+bot.use(createConversation(addCategoryConversation));
+bot.use(createConversation(showProductsConversation));
 
-// Обработчики для кнопок в категориях
-bot.hears('➕ Добавить категорию', handleAddCategory);
+// Команда /start — показываем главное меню
+bot.command('start', async (ctx) => {
+  await ctx.reply(
+    '👋 Добро пожаловать в панель управления магазином!\n\nВыберите действие:',
+    { reply_markup: mainMenuKeyboard },
+  );
+  logger.info('Start command', { userId: ctx.from?.id });
+});
 
-// Обработчики для потоков добавления товара и категории
-bot.on('message:text', async (ctx: Context) => {
-  try {
-    const userId = ctx.from?.id;
-    if (!userId) return;
+// Кнопка "Найти товар"
+bot.hears('🔍 Найти товар', async (ctx) => {
+  await ctx.conversation.enter('findProductConversation');
+});
 
-    // Проверяем, находится ли пользователь в процессе добавления товара
-    // Это будет обработано в handleAddProductFlow
-    await handleAddProductFlow(ctx);
+// Кнопка "Добавить товар"
+bot.hears('➕ Добавить товар', async (ctx) => {
+  await ctx.conversation.enter('addProductConversation');
+});
 
-    // Проверяем, находится ли пользователь в процессе добавления категории
-    await handleAddCategoryFlow(ctx);
+// Кнопка "Найти категорию"
+bot.hears('🔍 Найти категорию', async (ctx) => {
+  await ctx.conversation.enter('findCategoryConversation');
+});
 
-    // Проверяем, находится ли пользователь в процессе продажи
-    await handleSaleFlow(ctx);
+// Кнопка "Добавить категорию"
+bot.hears('➕ Добавить категорию', async (ctx) => {
+  await ctx.conversation.enter('addCategoryConversation');
+});
 
-    // Проверяем, находится ли пользователь в процессе генерации QR
-    await handleGenerateQRFlow(ctx);
-  } catch (error) {
-    logger.error('Error in message handler', { error });
-  }
+// Кнопка "Показать товары"
+bot.hears('📋 Показать товары', async (ctx) => {
+  await ctx.conversation.enter('showProductsConversation');
 });
 
 // Обработчик ошибок

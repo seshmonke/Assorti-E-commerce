@@ -1,5 +1,7 @@
 import express from 'express';
+import cors from 'cors';
 import productRoutes from './routes/productRoutes.js';
+import categoryRoutes from './routes/categoryRoutes.js';
 import { logger } from './middleware/logger.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
@@ -7,11 +9,20 @@ export function buildApp() {
     const app = express();
 
     // Middleware
+    app.use(cors({
+        origin: process.env.CORS_ORIGIN?.split(',') ?? [
+            'http://localhost:5173',
+            'http://127.0.0.1:5173',
+        ],
+        methods: ['GET', 'POST', 'PUT', 'DELETE'],
+        allowedHeaders: ['Content-Type', 'Authorization'],
+    }));
     app.use(express.json());
     app.use(logger);
 
     // Routes
     app.use('/api/products', productRoutes);
+    app.use('/api/categories', categoryRoutes);
 
     // Health check
     app.get('/health', (_req, res) => {

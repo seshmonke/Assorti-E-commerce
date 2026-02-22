@@ -1,4 +1,4 @@
-import { startBot } from './bot';
+import { startBot } from "./bot";
 import { logger } from './utils/logger';
 
 async function main(): Promise<void> {

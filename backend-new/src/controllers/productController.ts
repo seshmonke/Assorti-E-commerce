@@ -64,6 +64,22 @@ export class ProductController {
     }
 
     /**
+     * GET /api/products/sale - Получить товары со скидкой
+     */
+    static async getProductsOnSale(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const products = await ProductModel.findOnSale();
+            const response: ApiResponse<typeof products> = {
+                success: true,
+                data: products,
+            };
+            res.json(response);
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
      * GET /api/products/search?q=query - Поиск продуктов
      */
     static async searchProducts(req: Request, res: Response, next: NextFunction): Promise<void> {

@@ -1,52 +1,73 @@
-// Типы для товаров
+// Типы для товаров (соответствуют бэкенду)
+export type ProductCategory =
+  | 'all'
+  | 'tshirts'
+  | 'jeans'
+  | 'jackets'
+  | 'hats'
+  | 'belts'
+  | 'glasses'
+  | 'shoes'
+  | 'bags';
+
 export interface Product {
-  id: string;
+  id: number;
   name: string;
-  slug: string;
-  description?: string;
   price: number;
-  image?: string;
-  stock: number;
-  categoryId: string;
-  barcode?: string;
+  image: string;
+  category: ProductCategory;
+  description: string;
+  sizes: unknown;
+  composition: unknown;
+  discount: number | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface CreateProductData {
+  name: string;
+  price: number;
+  image: string;
+  category: ProductCategory;
+  description: string;
+  sizes: unknown;
+  composition: unknown;
+  discount?: number;
+}
+
+export interface UpdateProductData {
+  name?: string;
+  price?: number;
+  image?: string;
+  category?: ProductCategory;
+  description?: string;
+  sizes?: unknown;
+  composition?: unknown;
+  discount?: number;
 }
 
 // Типы для категорий
+export type CategorySection = 'clothing' | 'accessories';
+
 export interface Category {
-  id: string;
+  id: number;
   name: string;
-  slug: string;
-  description?: string;
-  image?: string;
+  section: CategorySection;
+  order: number;
   createdAt: string;
   updatedAt: string;
 }
 
-// Типы для продаж
-export interface Sale {
-  id: string;
-  productId: string;
-  quantity: number;
-  price: number;
-  saleDate: string;
-  createdAt: string;
+export interface CreateCategoryData {
+  name: string;
+  section: CategorySection;
+  order: number;
 }
 
-// Типы для QR-кодов
-export interface QRCode {
-  id: string;
-  productId: string;
-  code: string;
-  createdAt: string;
-}
-
-// Контекст пользователя
-export interface UserContext {
-  userId: number;
-  state: string;
-  data: Record<string, any>;
+export interface UpdateCategoryData {
+  name?: string;
+  section?: CategorySection;
+  order?: number;
 }
 
 // Ответ API
@@ -55,31 +76,4 @@ export interface ApiResponse<T> {
   data?: T;
   error?: string;
   message?: string;
-}
-
-// Данные для добавления товара
-export interface CreateProductData {
-  name: string;
-  description?: string;
-  price: number;
-  categoryId: string;
-  stock?: number;
-  image?: string;
-}
-
-// Данные для редактирования товара
-export interface UpdateProductData {
-  name?: string;
-  description?: string;
-  price?: number;
-  categoryId?: string;
-  stock?: number;
-  image?: string;
-}
-
-// Данные для продажи
-export interface CreateSaleData {
-  productId: string;
-  quantity: number;
-  price: number;
 }

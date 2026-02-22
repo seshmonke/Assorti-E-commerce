@@ -1,4 +1,5 @@
-import { prisma } from '../../lib/prisma.js';
+import { Prisma } from '../../generated/prisma/client.js';
+import { prisma } from '../lib/prisma.js';
 import type { CreateProductDTO, UpdateProductDTO, IProduct } from '../types/index.js';
 
 export class ProductModel {
@@ -28,11 +29,22 @@ export class ProductModel {
     }
 
     /**
+     * Получить товары со скидкой (discount > 0)
+     */
+    static async findOnSale(): Promise<IProduct[]> {
+        return prisma.product.findMany({
+            where: {
+                discount: { gt: 0 },
+            },
+        });
+    }
+
+    /**
      * Создать новый продукт
      */
     static async create(data: CreateProductDTO): Promise<IProduct> {
         return prisma.product.create({
-            data,
+            data: data as Prisma.ProductCreateInput,
         });
     }
 
@@ -42,7 +54,7 @@ export class ProductModel {
     static async update(id: number, data: UpdateProductDTO): Promise<IProduct> {
         return prisma.product.update({
             where: { id },
-            data,
+            data: data as Prisma.ProductUpdateInput,
         });
     }
 
@@ -63,7 +75,6 @@ export class ProductModel {
             where: {
                 name: {
                     contains: query,
-                    mode: 'insensitive',
                 },
             },
         });

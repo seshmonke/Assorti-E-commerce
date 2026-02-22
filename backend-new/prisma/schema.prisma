@@ -20,7 +20,6 @@ enum ProductCategory {
   glasses
   shoes
   bags
-  sale
 }
 
 model Product {
@@ -33,7 +32,15 @@ model Product {
   sizes             Json
   composition       Json
   discount          Int?
-  originalCategory  ProductCategory?
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
+}
+
+model Category {
+  id        Int      @id @default(autoincrement())
+  name      String
+  section   String   // "clothing" | "accessories"
+  order     Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

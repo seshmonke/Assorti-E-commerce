@@ -4,10 +4,10 @@ import { logger } from '../utils/logger';
 import {
   Product,
   Category,
-  Sale,
   CreateProductData,
   UpdateProductData,
-  CreateSaleData,
+  CreateCategoryData,
+  UpdateCategoryData,
   ApiResponse,
 } from '../types';
 
@@ -18,11 +18,35 @@ class ApiService {
     this.api = axios.create({
       baseURL: env.BACKEND_API_URL,
       timeout: 10000,
+      headers: {
+        Authorization: `Bearer ${env.API_SECRET_TOKEN}`,
+      },
     });
 
-    // Обработчик ошибок
+    this.api.interceptors.request.use(
+      (config) => {
+        const method = config.method?.toUpperCase() ?? 'UNKNOWN';
+        const url = config.url ?? '';
+        const body = config.data ? JSON.stringify(config.data) : null;
+        const bodyPart = body ? ` | Body: ${body}` : '';
+        logger.info(`→ ${method} ${config.baseURL}${url}${bodyPart}`);
+        (config as any)._requestStart = Date.now();
+        return config;
+      },
+      (error) => {
+        logger.error('Request setup error', { message: error.message });
+        throw error;
+      }
+    );
+
     this.api.interceptors.response.use(
-      (response) => response,
+      (response) => {
+        const method = response.config.method?.toUpperCase() ?? 'UNKNOWN';
+        const url = response.config.url ?? '';
+        const duration = Date.now() - ((response.config as any)._requestStart ?? Date.now());
+        logger.info(`← ${response.status} ${method} ${url} (${duration}ms)`);
+        return response;
+      },
       (error) => {
         logger.error('API Error:', {
           status: error.response?.status,
@@ -35,6 +59,7 @@ class ApiService {
   }
 
   // ===== ТОВАРЫ =====
+
   async getAllProducts(): Promise<Product[]> {
     try {
       const response = await this.api.get<ApiResponse<Product[]>>('/products');
@@ -45,22 +70,12 @@ class ApiService {
     }
   }
 
-  async getProductById(id: string): Promise<Product | null> {
+  async getProductById(id: number): Promise<Product | null> {
     try {
       const response = await this.api.get<ApiResponse<Product>>(`/products/${id}`);
       return response.data.data || null;
     } catch (error) {
       logger.error('Failed to get product', { id, error });
-      throw error;
-    }
-  }
-
-  async getProductByBarcode(barcode: string): Promise<Product | null> {
-    try {
-      const response = await this.api.get<ApiResponse<Product>>(`/products/barcode/${barcode}`);
-      return response.data.data || null;
-    } catch (error) {
-      logger.error('Failed to get product by barcode', { barcode, error });
       throw error;
     }
   }
@@ -78,7 +93,7 @@ class ApiService {
     }
   }
 
-  async updateProduct(id: string, data: UpdateProductData): Promise<Product> {
+  async updateProduct(id: number, data: UpdateProductData): Promise<Product> {
     try {
       const response = await this.api.put<ApiResponse<Product>>(`/products/${id}`, data);
       if (!response.data.data) {
@@ -91,7 +106,7 @@ class ApiService {
     }
   }
 
-  async deleteProduct(id: string): Promise<void> {
+  async deleteProduct(id: number): Promise<void> {
     try {
       await this.api.delete(`/products/${id}`);
     } catch (error) {
@@ -101,6 +116,7 @@ class ApiService {
   }
 
   // ===== КАТЕГОРИИ =====
+
   async getAllCategories(): Promise<Category[]> {
     try {
       const response = await this.api.get<ApiResponse<Category[]>>('/categories');
@@ -111,7 +127,7 @@ class ApiService {
     }
   }
 
-  async getCategoryById(id: string): Promise<Category | null> {
+  async getCategoryById(id: number): Promise<Category | null> {
     try {
       const response = await this.api.get<ApiResponse<Category>>(`/categories/${id}`);
       return response.data.data || null;
@@ -121,108 +137,37 @@ class ApiService {
     }
   }
 
-  async createCategory(name: string, description?: string): Promise<Category> {
+  async createCategory(data: CreateCategoryData): Promise<Category> {
     try {
-      const response = await this.api.post<ApiResponse<Category>>('/categories', {
-        name,
-        description,
-      });
+      const response = await this.api.post<ApiResponse<Category>>('/categories', data);
       if (!response.data.data) {
         throw new Error('No data returned from server');
       }
       return response.data.data;
     } catch (error) {
-      logger.error('Failed to create category', { name, error });
+      logger.error('Failed to create category', { data, error });
       throw error;
     }
   }
 
-  async updateCategory(id: string, name?: string, description?: string): Promise<Category> {
+  async updateCategory(id: number, data: UpdateCategoryData): Promise<Category> {
     try {
-      const response = await this.api.put<ApiResponse<Category>>(`/categories/${id}`, {
-        name,
-        description,
-      });
+      const response = await this.api.put<ApiResponse<Category>>(`/categories/${id}`, data);
       if (!response.data.data) {
         throw new Error('No data returned from server');
       }
       return response.data.data;
     } catch (error) {
-      logger.error('Failed to update category', { id, error });
+      logger.error('Failed to update category', { id, data, error });
       throw error;
     }
   }
 
-  async deleteCategory(id: string): Promise<void> {
+  async deleteCategory(id: number): Promise<void> {
     try {
       await this.api.delete(`/categories/${id}`);
     } catch (error) {
       logger.error('Failed to delete category', { id, error });
-      throw error;
-    }
-  }
-
-  // ===== ПРОДАЖИ =====
-  async createSale(data: CreateSaleData): Promise<Sale> {
-    try {
-      const response = await this.api.post<ApiResponse<Sale>>('/sales', data);
-      if (!response.data.data) {
-        throw new Error('No data returned from server');
-      }
-      return response.data.data;
-    } catch (error) {
-      logger.error('Failed to create sale', { data, error });
-      throw error;
-    }
-  }
-
-  async getSales(): Promise<Sale[]> {
-    try {
-      const response = await this.api.get<ApiResponse<Sale[]>>('/sales');
-      return response.data.data || [];
-    } catch (error) {
-      logger.error('Failed to get sales', error);
-      throw error;
-    }
-  }
-
-  async updateProductStock(id: string, stock: number): Promise<Product> {
-    try {
-      const response = await this.api.put<ApiResponse<Product>>(`/products/${id}/stock`, {
-        stock,
-      });
-      if (!response.data.data) {
-        throw new Error('No data returned from server');
-      }
-      return response.data.data;
-    } catch (error) {
-      logger.error('Failed to update product stock', { id, stock, error });
-      throw error;
-    }
-  }
-
-  // ===== QR-КОДЫ =====
-  async generateQRCode(productId: string): Promise<string> {
-    try {
-      const response = await this.api.post<ApiResponse<{ code: string }>>('/qrcodes/generate', {
-        productId,
-      });
-      if (!response.data.data?.code) {
-        throw new Error('No QR code returned from server');
-      }
-      return response.data.data.code;
-    } catch (error) {
-      logger.error('Failed to generate QR code', { productId, error });
-      throw error;
-    }
-  }
-
-  async getQRCode(productId: string): Promise<string | null> {
-    try {
-      const response = await this.api.get<ApiResponse<{ code: string }>>(`/qrcodes/${productId}`);
-      return response.data.data?.code || null;
-    } catch (error) {
-      logger.error('Failed to get QR code', { productId, error });
       throw error;
     }
   }

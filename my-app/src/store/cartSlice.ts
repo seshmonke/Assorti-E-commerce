@@ -1,6 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
-import type { Product } from '../data/products';
+import type { Product } from '../services/api';
 
 export interface CartItem {
   id: number;
@@ -52,7 +52,7 @@ const cartSlice = createSlice({
           image: product.image,
           quantity: 1,
           size: size,
-          discount: product.discount
+          discount: product.discount ?? undefined,
         });
       }
 

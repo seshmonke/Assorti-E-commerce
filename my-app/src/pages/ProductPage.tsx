@@ -1,31 +1,55 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { products, DELIVERY_INFO } from '../data/products';
-import { useAppDispatch } from '../store/hooks';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { loadProductById, clearCurrentProduct } from '../store/productsSlice';
 import { addToCart } from '../store/cartSlice';
+
+const DELIVERY_INFO = 'Доставка по России: 2-7 дней. Бесплатная доставка при заказе от 3000 ₽. Возврат в течение 14 дней.';
 
 export function ProductPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
+  const { currentProduct: product, loading, error } = useAppSelector((state) => state.products);
   const [selectedSize, setSelectedSize] = useState<string>('');
   const [isAdded, setIsAdded] = useState<boolean>(false);
 
-  const product = products.find(p => p.id === Number(id));
+  useEffect(() => {
+    if (id) {
+      dispatch(loadProductById(Number(id)));
+    }
+    return () => {
+      dispatch(clearCurrentProduct());
+    };
+  }, [id, dispatch]);
 
   // Автоматически выбираем размер, если он один
   useEffect(() => {
     if (product && product.sizes.length === 1) {
       setSelectedSize(product.sizes[0]);
+    } else {
+      setSelectedSize('');
     }
   }, [product]);
 
-  if (!product) {
+  if (loading) {
+    return (
+      <main className="flex-grow-1 py-4">
+        <div className="container d-flex justify-content-center py-5">
+          <div className="spinner-border text-danger" role="status">
+            <span className="visually-hidden">Загрузка...</span>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (error || !product) {
     return (
       <main className="flex-grow-1 py-4">
         <div className="container">
           <div className="alert alert-danger" role="alert">
-            Товар не найден
+            {error ?? 'Товар не найден'}
           </div>
           <button className="btn btn-primary" onClick={() => navigate('/')}>
             Вернуться на главную
@@ -38,8 +62,7 @@ export function ProductPage() {
   const handleAddToCart = () => {
     dispatch(addToCart({ product, size: selectedSize }));
     setIsAdded(true);
-    
-    // Возвращаем кнопку в исходное состояние через 2 секунды
+
     setTimeout(() => {
       setIsAdded(false);
     }, 600);
@@ -48,7 +71,7 @@ export function ProductPage() {
   return (
     <main className="flex-grow-1 py-4">
       <div className="container">
-        <button 
+        <button
           className="btn btn-outline-secondary mb-4"
           onClick={() => navigate(-1)}
         >
@@ -59,9 +82,9 @@ export function ProductPage() {
           {/* Фото товара */}
           <div className="col-lg-6">
             <div className="card border-0 shadow-sm">
-              <img 
-                src={product.image} 
-                className="card-img-top" 
+              <img
+                src={product.image}
+                className="card-img-top"
                 alt={product.name}
                 style={{ objectFit: 'cover', height: '500px' }}
               />
@@ -71,7 +94,7 @@ export function ProductPage() {
           {/* Информация о товаре */}
           <div className="col-lg-6">
             <h1 className="mb-3">{product.name}</h1>
-            
+
             {/* Цена */}
             <div className="mb-4">
               <p className="fs-3 fw-bold text-danger">{product.price} ₽</p>
@@ -91,9 +114,7 @@ export function ProductPage() {
                   <button
                     key={size}
                     className={`btn ${
-                      selectedSize === size
-                        ? 'btn-danger'
-                        : 'btn-outline-danger'
+                      selectedSize === size ? 'btn-danger' : 'btn-outline-danger'
                     }`}
                     onClick={() => setSelectedSize(size)}
                   >
@@ -127,13 +148,11 @@ export function ProductPage() {
             </div>
 
             {/* Кнопка добавления в корзину */}
-            <button 
+            <button
               className={`btn btn-lg w-100 add-to-cart-btn ${isAdded ? 'btn-added' : 'btn-danger'}`}
               onClick={handleAddToCart}
               disabled={!selectedSize || isAdded}
-              style={{
-                transition: 'all 0.3s ease'
-              }}
+              style={{ transition: 'all 0.3s ease' }}
             >
               {isAdded ? 'Добавлено' : 'Добавить в корзину'}
             </button>

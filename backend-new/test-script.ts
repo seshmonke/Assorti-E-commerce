@@ -54,7 +54,6 @@ async function addTestProducts() {
                     leather: 100,
                 }),
                 discount: 20,
-                originalCategory: 'jackets',
             },
         });
         console.log('✅ Куртка добавлена:', jacket);
@@ -92,23 +91,22 @@ async function addTestProducts() {
         });
         console.log('✅ Обувь добавлена:', shoes);
 
-        // Пример 6: Добавление товара в распродажу
+        // Пример 6: Добавление товара со скидкой (попадёт в SALE автоматически)
         const saleItem = await prisma.product.create({
             data: {
-                name: 'Рубашка (распродажа)',
+                name: 'Льняная рубашка',
                 price: 1200,
                 image: 'https://example.com/shirt-sale.jpg',
-                category: 'sale',
+                category: 'tshirts',
                 description: 'Льняная рубашка со скидкой',
                 sizes: JSON.stringify(['S', 'M', 'L', 'XL']),
                 composition: JSON.stringify({
                     linen: 100,
                 }),
                 discount: 50,
-                originalCategory: 'tshirts',
             },
         });
-        console.log('✅ Товар распродажи добавлен:', saleItem);
+        console.log('✅ Товар со скидкой добавлен:', saleItem);
 
         console.log('\n✨ Все тестовые товары успешно добавлены!');
 

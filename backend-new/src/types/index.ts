@@ -1,4 +1,4 @@
-export type ProductCategory = 'all' | 'tshirts' | 'jeans' | 'jackets' | 'hats' | 'belts' | 'glasses' | 'shoes' | 'bags' | 'sale';
+export type ProductCategory = 'all' | 'tshirts' | 'jeans' | 'jackets' | 'hats' | 'belts' | 'glasses' | 'shoes' | 'bags';
 
 export interface IProduct {
     id: number;
@@ -10,7 +10,6 @@ export interface IProduct {
     sizes: unknown;
     composition: unknown;
     discount: number | null;
-    originalCategory: ProductCategory | null;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -24,7 +23,6 @@ export interface CreateProductDTO {
     sizes: unknown;
     composition: unknown;
     discount?: number;
-    originalCategory?: ProductCategory;
 }
 
 export interface UpdateProductDTO {
@@ -36,7 +34,27 @@ export interface UpdateProductDTO {
     sizes?: unknown;
     composition?: unknown;
     discount?: number;
-    originalCategory?: ProductCategory;
+}
+
+export interface ICategory {
+    id: number;
+    name: string;
+    section: string;
+    order: number;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export interface CreateCategoryDTO {
+    name: string;
+    section: string;
+    order: number;
+}
+
+export interface UpdateCategoryDTO {
+    name?: string;
+    section?: string;
+    order?: number;
 }
 
 export interface AuthPayload {
