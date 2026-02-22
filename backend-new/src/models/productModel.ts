@@ -23,6 +23,10 @@ export class ProductModel {
      * Получить продукты по категории
      */
     static async findByCategory(category: string): Promise<IProduct[]> {
+        // Специальная обработка для категории 'sale'
+        if (category === 'sale') {
+            return this.findOnSale();
+        }
         return prisma.product.findMany({
             where: { category: category as any },
         });

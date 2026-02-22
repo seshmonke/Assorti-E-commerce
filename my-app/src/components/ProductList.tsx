@@ -2,21 +2,25 @@ import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { loadAllProducts, loadProductsByCategory, loadSaleProducts } from '../store/productsSlice';
+import type { ProductCategory } from '../types/categories';
 
-export function ProductList() {
+interface ProductListProps {
+  category: ProductCategory;
+}
+
+export function ProductList({ category }: ProductListProps) {
   const dispatch = useAppDispatch();
-  const selectedCategory = useAppSelector((state) => state.category.selectedCategory);
   const { items, loading, error } = useAppSelector((state) => state.products);
 
   useEffect(() => {
-    if (selectedCategory === 'all') {
+    if (category === 'all') {
       dispatch(loadAllProducts());
-    } else if (selectedCategory === 'sale') {
+    } else if (category === 'sale') {
       dispatch(loadSaleProducts());
     } else {
-      dispatch(loadProductsByCategory(selectedCategory));
+      dispatch(loadProductsByCategory(category));
     }
-  }, [selectedCategory, dispatch]);
+  }, [category, dispatch]);
 
   if (loading) {
     return (
