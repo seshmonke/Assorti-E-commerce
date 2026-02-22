@@ -1,11 +1,10 @@
-export type ProductCategory = 'all' | 'tshirts' | 'jeans' | 'jackets' | 'hats' | 'belts' | 'glasses' | 'shoes' | 'bags';
-
 export interface IProduct {
-    id: number;
+    id: string;
     name: string;
     price: number;
     image: string;
-    category: ProductCategory;
+    categoryId: string;
+    category?: ICategory;
     description: string;
     sizes: unknown;
     composition: unknown;
@@ -18,7 +17,7 @@ export interface CreateProductDTO {
     name: string;
     price: number;
     image: string;
-    category: ProductCategory;
+    categoryId: string;
     description: string;
     sizes: unknown;
     composition: unknown;
@@ -29,7 +28,7 @@ export interface UpdateProductDTO {
     name?: string;
     price?: number;
     image?: string;
-    category?: ProductCategory;
+    categoryId?: string;
     description?: string;
     sizes?: unknown;
     composition?: unknown;
@@ -37,7 +36,7 @@ export interface UpdateProductDTO {
 }
 
 export interface ICategory {
-    id: number;
+    id: string;
     name: string;
     section: string;
     order: number;

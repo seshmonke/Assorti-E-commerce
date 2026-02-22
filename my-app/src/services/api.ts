@@ -1,13 +1,19 @@
-import type { ProductCategory } from '../types/categories';
+import axios from 'axios';
+import type { Category } from '../types/categories';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
 
+const api = axios.create({
+  baseURL: `${API_URL}/api`,
+});
+
 export interface Product {
-  id: number;
+  id: string;
   name: string;
   price: number;
   image: string;
-  category: ProductCategory;
+  categoryId: string;
+  category?: Category;
   description: string;
   sizes: string[];
   composition: Record<string, number>;
@@ -20,17 +26,6 @@ interface ApiResponse<T> {
   success: boolean;
   data?: T;
   error?: string;
-}
-
-async function handleResponse<T>(res: Response): Promise<T> {
-  if (!res.ok) {
-    throw new Error(`HTTP error: ${res.status} ${res.statusText}`);
-  }
-  const json: ApiResponse<T> = await res.json();
-  if (!json.success || json.data === undefined) {
-    throw new Error(json.error ?? 'Unknown API error');
-  }
-  return json.data;
 }
 
 /**
@@ -58,25 +53,41 @@ function normalizeProduct(product: Product): Product {
 }
 
 export async function fetchAllProducts(): Promise<Product[]> {
-  const res = await fetch(`${API_URL}/api/products`);
-  const products = await handleResponse<Product[]>(res);
-  return products.map(normalizeProduct);
+  const { data } = await api.get<ApiResponse<Product[]>>('/products');
+  if (!data.success || data.data === undefined) {
+    throw new Error(data.error ?? 'Unknown API error');
+  }
+  return data.data.map(normalizeProduct);
 }
 
-export async function fetchProductById(id: number): Promise<Product> {
-  const res = await fetch(`${API_URL}/api/products/${id}`);
-  const product = await handleResponse<Product>(res);
-  return normalizeProduct(product);
+export async function fetchProductById(id: string): Promise<Product> {
+  const { data } = await api.get<ApiResponse<Product>>(`/products/${id}`);
+  if (!data.success || data.data === undefined) {
+    throw new Error(data.error ?? 'Unknown API error');
+  }
+  return normalizeProduct(data.data);
 }
 
-export async function fetchProductsByCategory(category: ProductCategory): Promise<Product[]> {
-  const res = await fetch(`${API_URL}/api/products/category/${category}`);
-  const products = await handleResponse<Product[]>(res);
-  return products.map(normalizeProduct);
+export async function fetchProductsByCategoryId(categoryId: string): Promise<Product[]> {
+  const { data } = await api.get<ApiResponse<Product[]>>(`/products/category/${categoryId}`);
+  if (!data.success || data.data === undefined) {
+    throw new Error(data.error ?? 'Unknown API error');
+  }
+  return data.data.map(normalizeProduct);
+}
+
+export async function fetchCategories(): Promise<Category[]> {
+  const { data } = await api.get<ApiResponse<Category[]>>('/categories');
+  if (!data.success || data.data === undefined) {
+    throw new Error(data.error ?? 'Unknown API error');
+  }
+  return data.data;
 }
 
 export async function fetchSaleProducts(): Promise<Product[]> {
-  const res = await fetch(`${API_URL}/api/products/sale`);
-  const products = await handleResponse<Product[]>(res);
-  return products.map(normalizeProduct);
+  const { data } = await api.get<ApiResponse<Product[]>>('/products/sale');
+  if (!data.success || data.data === undefined) {
+    throw new Error(data.error ?? 'Unknown API error');
+  }
+  return data.data.map(normalizeProduct);
 }

@@ -5,7 +5,7 @@ export function HomePage() {
     <main className="flex-grow-1 py-4">
       <div className="container">
         <h1 className="mb-4">Все товары</h1>
-        <ProductList category="all" />
+        <ProductList categoryId="all" />
       </div>
     </main>
   );

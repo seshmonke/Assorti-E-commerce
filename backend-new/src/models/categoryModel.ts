@@ -14,7 +14,7 @@ export class CategoryModel {
     /**
      * Получить категорию по ID
      */
-    static async findById(id: number): Promise<ICategory | null> {
+    static async findById(id: string): Promise<ICategory | null> {
         return prisma.category.findUnique({
             where: { id },
         });
@@ -36,7 +36,7 @@ export class CategoryModel {
     /**
      * Обновить категорию
      */
-    static async update(id: number, data: UpdateCategoryDTO): Promise<ICategory> {
+    static async update(id: string, data: UpdateCategoryDTO): Promise<ICategory> {
         return prisma.category.update({
             where: { id },
             data,
@@ -46,7 +46,7 @@ export class CategoryModel {
     /**
      * Удалить категорию
      */
-    static async delete(id: number): Promise<ICategory> {
+    static async delete(id: string): Promise<ICategory> {
         return prisma.category.delete({
             where: { id },
         });

@@ -2,11 +2,10 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import {
   fetchAllProducts,
   fetchProductById,
-  fetchProductsByCategory,
+  fetchProductsByCategoryId,
   fetchSaleProducts,
   type Product,
 } from '../services/api';
-import type { ProductCategory } from '../types/categories';
 
 interface ProductsState {
   items: Product[];
@@ -27,9 +26,9 @@ export const loadAllProducts = createAsyncThunk(
   async () => fetchAllProducts(),
 );
 
-export const loadProductsByCategory = createAsyncThunk(
-  'products/loadByCategory',
-  async (category: ProductCategory) => fetchProductsByCategory(category),
+export const loadProductsByCategoryId = createAsyncThunk(
+  'products/loadByCategoryId',
+  async (categoryId: string) => fetchProductsByCategoryId(categoryId),
 );
 
 export const loadSaleProducts = createAsyncThunk(
@@ -39,7 +38,7 @@ export const loadSaleProducts = createAsyncThunk(
 
 export const loadProductById = createAsyncThunk(
   'products/loadById',
-  async (id: number) => fetchProductById(id),
+  async (id: string) => fetchProductById(id),
 );
 
 const productsSlice = createSlice({
@@ -66,17 +65,17 @@ const productsSlice = createSlice({
         state.error = action.error.message ?? 'Ошибка загрузки товаров';
       });
 
-    // loadProductsByCategory
+    // loadProductsByCategoryId
     builder
-      .addCase(loadProductsByCategory.pending, (state) => {
+      .addCase(loadProductsByCategoryId.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(loadProductsByCategory.fulfilled, (state, action) => {
+      .addCase(loadProductsByCategoryId.fulfilled, (state, action) => {
         state.loading = false;
         state.items = action.payload;
       })
-      .addCase(loadProductsByCategory.rejected, (state, action) => {
+      .addCase(loadProductsByCategoryId.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message ?? 'Ошибка загрузки категории';
       });

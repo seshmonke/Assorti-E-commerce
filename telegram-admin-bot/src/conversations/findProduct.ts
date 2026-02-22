@@ -3,37 +3,33 @@ import { type Context, Keyboard } from 'grammy';
 import { apiService } from '../services/apiService';
 import { mainMenuKeyboard, backKeyboard } from '../keyboards/mainMenu';
 import { logger } from '../utils/logger';
-import type { Product } from '../types';
+import type { Product, Category } from '../types';
 
 export type MyContext = ConversationFlavor<Context>;
 type MyConversation = Conversation<MyContext, MyContext>;
 
-const CATEGORY_LABELS: Record<string, string> = {
-  all: 'Все',
-  tshirts: 'Футболки',
-  jeans: 'Джинсы',
-  jackets: 'Куртки',
-  hats: 'Шапки',
-  belts: 'Ремни',
-  glasses: 'Очки',
-  shoes: 'Обувь',
-  bags: 'Сумки',
-};
-
 function formatProductCard(product: Product): string {
   const sizes = Array.isArray(product.sizes)
     ? (product.sizes as string[]).join(', ')
-    : String(product.sizes);
-  const composition = Array.isArray(product.composition)
-    ? (product.composition as string[]).join(', ')
-    : String(product.composition);
+    : String(product.sizes ?? '—');
+
+  const composition =
+    typeof product.composition === 'object' &&
+    product.composition !== null &&
+    !Array.isArray(product.composition)
+      ? Object.entries(product.composition as Record<string, number>)
+          .map(([k, v]) => `${k}: ${v}%`)
+          .join(', ')
+      : String(product.composition ?? '—');
+
+  const categoryDisplay = product.category?.name ?? product.categoryId;
 
   let text = '📦 <b>Карточка товара</b>\n\n';
   text += `🆔 ID: <code>${product.id}</code>\n`;
   text += `📝 Название: <b>${product.name}</b>\n`;
   text += `💰 Цена: <b>${product.price} руб.</b>\n`;
   text += `🖼 Картинка: ${product.image}\n`;
-  text += `📂 Категория: ${CATEGORY_LABELS[product.category] || product.category}\n`;
+  text += `📂 Категория: ${categoryDisplay}\n`;
   text += `📄 Описание: ${product.description}\n`;
   text += `📏 Размеры: ${sizes}\n`;
   text += `🧵 Состав: ${composition}\n`;
@@ -51,23 +47,27 @@ const editProductKeyboard = new Keyboard()
   .text('✏️ Изменить категорию').text('✏️ Изменить размер')
   .row()
   .text('✏️ Изменить состав').text('✏️ Изменить скидку')
+  .row()
+  .text('🗑 Удалить товар')
   .resized();
 
-const categorySelectKeyboard = new Keyboard()
-  .text('⬅️ Назад')
-  .row()
-  .text('all').text('tshirts').text('jeans')
-  .row()
-  .text('jackets').text('hats').text('belts')
-  .row()
-  .text('glasses').text('shoes').text('bags')
+const confirmDeleteKeyboard = new Keyboard()
+  .text('✅ Да, удалить').text('❌ Отмена')
   .resized();
+
+function buildCategoryKeyboard(categories: Category[]): Keyboard {
+  const kb = new Keyboard().text('⬅️ Назад');
+  categories.forEach((cat) => {
+    kb.row().text(cat.name);
+  });
+  return kb.resized();
+}
 
 export async function findProductConversation(
   conversation: MyConversation,
   ctx: MyContext,
 ): Promise<void> {
-  await ctx.reply('Введите ID товара:', { reply_markup: backKeyboard });
+  await ctx.reply('Введите ID товара (UUID):', { reply_markup: backKeyboard });
 
   while (true) {
     const idCtx = await conversation.wait();
@@ -79,11 +79,7 @@ export async function findProductConversation(
       return;
     }
 
-    const id = parseInt(text, 10);
-    if (isNaN(id)) {
-      await ctx.reply('❌ Введите числовой ID товара:');
-      continue;
-    }
+    const id = text;
 
     let product: Product | null = null;
     try {
@@ -117,6 +113,34 @@ export async function findProductConversation(
       let fieldPrompt = '';
       let fieldKey = '';
 
+      if (editText === '🗑 Удалить товар') {
+        await ctx.reply(
+          `⚠️ Вы уверены, что хотите удалить товар <b>${product!.name}</b>?\nЭто действие необратимо!`,
+          { parse_mode: 'HTML', reply_markup: confirmDeleteKeyboard },
+        );
+
+        const confirmCtx = await conversation.wait();
+        const confirmText = confirmCtx.message?.text?.trim();
+
+        if (confirmText === '✅ Да, удалить') {
+          try {
+            await conversation.external(() => apiService.deleteProduct(product!.id));
+            logger.info('Product deleted via bot', { productId: product!.id });
+            await ctx.reply(`✅ Товар <b>${product!.name}</b> успешно удалён!`, {
+              parse_mode: 'HTML',
+              reply_markup: mainMenuKeyboard,
+            });
+            return;
+          } catch (err) {
+            logger.error('Failed to delete product via bot', { err });
+            await ctx.reply('⚠️ Ошибка при удалении товара.', { reply_markup: editProductKeyboard });
+          }
+        } else {
+          await ctx.reply('Удаление отменено.', { reply_markup: editProductKeyboard });
+        }
+        continue;
+      }
+
       if (editText === '✏️ Изменить название') { fieldPrompt = 'Введите новое название:'; fieldKey = 'name'; }
       else if (editText === '✏️ Изменить цену') { fieldPrompt = 'Введите новую цену (число):'; fieldKey = 'price'; }
       else if (editText === '✏️ Изменить картинку') { fieldPrompt = 'Введите новый URL картинки:'; fieldKey = 'image'; }
@@ -126,8 +150,16 @@ export async function findProductConversation(
       else if (editText === '✏️ Изменить скидку') { fieldPrompt = 'Введите скидку в % (0 — без скидки):'; fieldKey = 'discount'; }
       else continue;
 
+      let categories: Category[] = [];
       if (fieldKey === 'category') {
-        await ctx.reply(fieldPrompt, { reply_markup: categorySelectKeyboard });
+        try {
+          categories = await conversation.external(() => apiService.getAllCategories());
+        } catch {
+          await ctx.reply('⚠️ Не удалось загрузить категории.', { reply_markup: editProductKeyboard });
+          continue;
+        }
+        const catLines = categories.map((c, i) => `${i + 1}. ${c.name}`).join('\n');
+        await ctx.reply(`${fieldPrompt}\n\n${catLines}`, { reply_markup: buildCategoryKeyboard(categories) });
       } else {
         await ctx.reply(fieldPrompt, { reply_markup: backKeyboard });
       }
@@ -156,6 +188,13 @@ export async function findProductConversation(
           continue;
         }
         updateData.discount = discount === 0 ? null : discount;
+      } else if (fieldKey === 'category') {
+        const selectedCat = categories.find((c) => c.name === newValue);
+        if (!selectedCat) {
+          await ctx.reply('❌ Категория не найдена. Выберите из списка.', { reply_markup: editProductKeyboard });
+          continue;
+        }
+        updateData.categoryId = selectedCat.id;
       } else if (fieldKey === 'sizes') {
         updateData.sizes = newValue.split(',').map((s) => s.trim());
       } else if (fieldKey === 'composition') {

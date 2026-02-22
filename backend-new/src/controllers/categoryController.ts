@@ -24,8 +24,8 @@ export class CategoryController {
      */
     static async getCategoryById(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
-            const { id } = req.params;
-            const category = await CategoryModel.findById(Number(id));
+            const { id } = req.params as { id: string };
+            const category = await CategoryModel.findById(id);
 
             if (!category) {
                 res.status(404).json({
@@ -85,7 +85,7 @@ export class CategoryController {
      */
     static async updateCategory(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
-            const { id } = req.params;
+            const { id } = req.params as { id: string };
             const data: UpdateCategoryDTO = req.body;
 
             if (data.section && data.section !== 'clothing' && data.section !== 'accessories') {
@@ -96,7 +96,7 @@ export class CategoryController {
                 return;
             }
 
-            const category = await CategoryModel.update(Number(id), data);
+            const category = await CategoryModel.update(id, data);
 
             const response: ApiResponse<typeof category> = {
                 success: true,
@@ -114,9 +114,9 @@ export class CategoryController {
      */
     static async deleteCategory(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
-            const { id } = req.params;
+            const { id } = req.params as { id: string };
 
-            const category = await CategoryModel.delete(Number(id));
+            const category = await CategoryModel.delete(id);
 
             const response: ApiResponse<typeof category> = {
                 success: true,

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { Routes, Route, Link } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from './store/hooks'
 import { loadFromLocalStorage } from './store/cartSlice'
+import { loadCategories } from './store/categorySlice'
 import { HomePage } from './pages/HomePage'
 import { CategoryPage } from './pages/CategoryPage'
 import { CartPage } from './pages/CartPage'
@@ -13,9 +14,19 @@ function App() {
   const dispatch = useAppDispatch();
   const [isCartOpen, setIsCartOpen] = useState(false);
   const cartItemsCount = useAppSelector((state) => state.cart.items.length);
+  const categories = useAppSelector((state) => state.categories.items);
+
+  const clothingCategories = categories
+    .filter((c) => c.section === 'clothing')
+    .sort((a, b) => a.order - b.order);
+
+  const accessoriesCategories = categories
+    .filter((c) => c.section === 'accessories')
+    .sort((a, b) => a.order - b.order);
 
   useEffect(() => {
     dispatch(loadFromLocalStorage());
+    dispatch(loadCategories());
   }, [dispatch]);
 
   return (
@@ -36,27 +47,40 @@ function App() {
                 <Link className="nav-link text-light" to="/">Все товары</Link>
               </li>
 
-              <li className="nav-item dropdown">
-                <a className="nav-link dropdown-toggle text-light" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                  Одежда
-                </a>
-                <ul className="dropdown-menu bg-danger border-0" id="dropdown1">
-                  <li><Link className="dropdown-item text-light" to="/category/tshirts">Футболки</Link></li>
-                  <li><Link className="dropdown-item text-light" to="/category/jeans">Джинсы</Link></li>
-                  <li><Link className="dropdown-item text-light" to="/category/jackets">Пиджаки</Link></li>
-                </ul>
-              </li>
+              {clothingCategories.length > 0 && (
+                <li className="nav-item dropdown">
+                  <a className="nav-link dropdown-toggle text-light" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    Одежда
+                  </a>
+                  <ul className="dropdown-menu bg-danger border-0" id="dropdown1">
+                    {clothingCategories.map((cat) => (
+                      <li key={cat.id}>
+                        <Link className="dropdown-item text-light" to={`/category/${cat.id}`}>
+                          {cat.name}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </li>
+              )}
 
-              <li className="nav-item dropdown">
-                <a className="nav-link dropdown-toggle text-light" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                  Аксессуары
-                </a>
-                <ul className="dropdown-menu bg-danger border-0" id="dropdown2">
-                  <li><Link className="dropdown-item text-light" to="/category/hats">Шапки</Link></li>
-                  <li><Link className="dropdown-item text-light" to="/category/belts">Ремни</Link></li>
-                  <li><Link className="dropdown-item text-light" to="/category/glasses">Очки</Link></li>
-                </ul>
-              </li>
+              {accessoriesCategories.length > 0 && (
+                <li className="nav-item dropdown">
+                  <a className="nav-link dropdown-toggle text-light" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    Аксессуары
+                  </a>
+                  <ul className="dropdown-menu bg-danger border-0" id="dropdown2">
+                    {accessoriesCategories.map((cat) => (
+                      <li key={cat.id}>
+                        <Link className="dropdown-item text-light" to={`/category/${cat.id}`}>
+                          {cat.name}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </li>
+              )}
+
               <li className="nav-item">
                 <Link className="nav-link text-light" to="/category/sale">SALE</Link>
               </li>
@@ -85,7 +109,7 @@ function App() {
 
       <Routes>
         <Route path="/" element={<HomePage />} />
-        <Route path="/category/:category" element={<CategoryPage />} />
+        <Route path="/category/:categoryId" element={<CategoryPage />} />
         <Route path="/product/:id" element={<ProductPage />} />
         <Route path="/checkout" element={<CartPage />} />
       </Routes>

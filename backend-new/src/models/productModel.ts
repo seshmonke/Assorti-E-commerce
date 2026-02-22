@@ -1,4 +1,4 @@
-import { Prisma } from '../../generated/prisma/client.js';
+import type { Prisma } from '../../generated/prisma/client.js';
 import { prisma } from '../lib/prisma.js';
 import type { CreateProductDTO, UpdateProductDTO, IProduct } from '../types/index.js';
 
@@ -7,28 +7,28 @@ export class ProductModel {
      * Получить все продукты
      */
     static async findAll(): Promise<IProduct[]> {
-        return prisma.product.findMany();
+        return prisma.product.findMany({
+            include: { category: true },
+        });
     }
 
     /**
      * Получить продукт по ID
      */
-    static async findById(id: number): Promise<IProduct | null> {
+    static async findById(id: string): Promise<IProduct | null> {
         return prisma.product.findUnique({
             where: { id },
+            include: { category: true },
         });
     }
 
     /**
-     * Получить продукты по категории
+     * Получить продукты по категории ID
      */
-    static async findByCategory(category: string): Promise<IProduct[]> {
-        // Специальная обработка для категории 'sale'
-        if (category === 'sale') {
-            return this.findOnSale();
-        }
+    static async findByCategory(categoryId: string): Promise<IProduct[]> {
         return prisma.product.findMany({
-            where: { category: category as any },
+            where: { categoryId },
+            include: { category: true },
         });
     }
 
@@ -40,6 +40,7 @@ export class ProductModel {
             where: {
                 discount: { gt: 0 },
             },
+            include: { category: true },
         });
     }
 
@@ -47,27 +48,42 @@ export class ProductModel {
      * Создать новый продукт
      */
     static async create(data: CreateProductDTO): Promise<IProduct> {
+        const { categoryId, sizes, composition, ...rest } = data;
         return prisma.product.create({
-            data: data as Prisma.ProductCreateInput,
+            data: {
+                ...rest,
+                sizes: sizes as Prisma.InputJsonValue,
+                composition: composition as Prisma.InputJsonValue,
+                category: { connect: { id: categoryId } },
+            },
+            include: { category: true },
         });
     }
 
     /**
      * Обновить продукт
      */
-    static async update(id: number, data: UpdateProductDTO): Promise<IProduct> {
+    static async update(id: string, data: UpdateProductDTO): Promise<IProduct> {
+        const { categoryId, sizes, composition, ...rest } = data;
         return prisma.product.update({
             where: { id },
-            data: data as Prisma.ProductUpdateInput,
+            data: {
+                ...rest,
+                ...(sizes !== undefined ? { sizes: sizes as Prisma.InputJsonValue } : {}),
+                ...(composition !== undefined ? { composition: composition as Prisma.InputJsonValue } : {}),
+                ...(categoryId ? { category: { connect: { id: categoryId } } } : {}),
+            },
+            include: { category: true },
         });
     }
 
     /**
      * Удалить продукт
      */
-    static async delete(id: number): Promise<IProduct> {
+    static async delete(id: string): Promise<IProduct> {
         return prisma.product.delete({
             where: { id },
+            include: { category: true },
         });
     }
 
@@ -81,6 +97,7 @@ export class ProductModel {
                     contains: query,
                 },
             },
+            include: { category: true },
         });
     }
 }

@@ -70,7 +70,17 @@ class ApiService {
     }
   }
 
-  async getProductById(id: number): Promise<Product | null> {
+  async getProductsByCategoryId(categoryId: string): Promise<Product[]> {
+    try {
+      const response = await this.api.get<ApiResponse<Product[]>>(`/products/category/${categoryId}`);
+      return response.data.data || [];
+    } catch (error) {
+      logger.error('Failed to get products by category', { categoryId, error });
+      throw error;
+    }
+  }
+
+  async getProductById(id: string): Promise<Product | null> {
     try {
       const response = await this.api.get<ApiResponse<Product>>(`/products/${id}`);
       return response.data.data || null;
@@ -93,7 +103,7 @@ class ApiService {
     }
   }
 
-  async updateProduct(id: number, data: UpdateProductData): Promise<Product> {
+  async updateProduct(id: string, data: UpdateProductData): Promise<Product> {
     try {
       const response = await this.api.put<ApiResponse<Product>>(`/products/${id}`, data);
       if (!response.data.data) {
@@ -106,7 +116,7 @@ class ApiService {
     }
   }
 
-  async deleteProduct(id: number): Promise<void> {
+  async deleteProduct(id: string): Promise<void> {
     try {
       await this.api.delete(`/products/${id}`);
     } catch (error) {
@@ -127,7 +137,7 @@ class ApiService {
     }
   }
 
-  async getCategoryById(id: number): Promise<Category | null> {
+  async getCategoryById(id: string): Promise<Category | null> {
     try {
       const response = await this.api.get<ApiResponse<Category>>(`/categories/${id}`);
       return response.data.data || null;
@@ -150,7 +160,7 @@ class ApiService {
     }
   }
 
-  async updateCategory(id: number, data: UpdateCategoryData): Promise<Category> {
+  async updateCategory(id: string, data: UpdateCategoryData): Promise<Category> {
     try {
       const response = await this.api.put<ApiResponse<Category>>(`/categories/${id}`, data);
       if (!response.data.data) {
@@ -163,7 +173,7 @@ class ApiService {
     }
   }
 
-  async deleteCategory(id: number): Promise<void> {
+  async deleteCategory(id: string): Promise<void> {
     try {
       await this.api.delete(`/categories/${id}`);
     } catch (error) {

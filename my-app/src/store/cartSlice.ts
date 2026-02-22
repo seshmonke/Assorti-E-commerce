@@ -3,7 +3,7 @@ import type { PayloadAction } from '@reduxjs/toolkit';
 import type { Product } from '../services/api';
 
 export interface CartItem {
-  id: number;
+  id: string;
   name: string;
   price: number;
   image: string;
@@ -60,13 +60,13 @@ const cartSlice = createSlice({
       saveToLocalStorage(state.items);
     },
 
-    removeFromCart: (state, action: PayloadAction<{ id: number; size: string }>) => {
+    removeFromCart: (state, action: PayloadAction<{ id: string; size: string }>) => {
       state.items = state.items.filter(item => !(item.id === action.payload.id && item.size === action.payload.size));
       state.totalPrice = calculateTotalPrice(state.items);
       saveToLocalStorage(state.items);
     },
 
-    updateQuantity: (state, action: PayloadAction<{ id: number; quantity: number; size: string }>) => {
+    updateQuantity: (state, action: PayloadAction<{ id: string; quantity: number; size: string }>) => {
       const item = state.items.find(item => item.id === action.payload.id && item.size === action.payload.size);
       if (item) {
         if (action.payload.quantity <= 0) {

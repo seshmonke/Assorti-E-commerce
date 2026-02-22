@@ -40,7 +40,7 @@ export async function findCategoryConversation(
   conversation: MyConversation,
   ctx: MyContext,
 ): Promise<void> {
-  await ctx.reply('Введите ID категории:', { reply_markup: backKeyboard });
+  await ctx.reply('Введите ID категории (UUID):', { reply_markup: backKeyboard });
 
   while (true) {
     const idCtx = await conversation.wait();
@@ -52,11 +52,7 @@ export async function findCategoryConversation(
       return;
     }
 
-    const id = parseInt(text, 10);
-    if (isNaN(id)) {
-      await ctx.reply('❌ Введите числовой ID категории:');
-      continue;
-    }
+    const id = text;
 
     let category: Category | null = null;
     try {

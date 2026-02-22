@@ -23,7 +23,8 @@ function formatProductList(products: Product[]): string {
     const sizes = Array.isArray(p.sizes)
       ? (p.sizes as string[]).join(', ')
       : String(p.sizes ?? '—');
-    return `${idx + 1}. ${p.name} | ${sizes} | ${p.category} | ${p.price} руб. | ID: ${p.id}`;
+    const categoryName = p.category?.name || '—';
+    return `${idx + 1}. ${p.name} | ${sizes} | ${categoryName} | ${p.price} руб. | ID: ${p.id}`;
   });
 
   return `📋 <b>Список товаров (${products.length})</b>\n\n<code>${lines.join('\n')}</code>`;
@@ -64,15 +65,11 @@ export async function showProductsConversation(
 
     let products: Product[] = [];
     try {
-      const allProducts = await conversation.external(() => apiService.getAllProducts());
-
       if (num === 0) {
-        products = allProducts;
+        products = await conversation.external(() => apiService.getAllProducts());
       } else {
         const selectedCategory = categories[num - 1];
-        products = allProducts.filter(
-          (p) => p.category.toLowerCase() === selectedCategory.name.toLowerCase(),
-        );
+        products = await conversation.external(() => apiService.getProductsByCategoryId(selectedCategory.id));
       }
     } catch {
       logger.error('Failed to load products in showProductsConversation');

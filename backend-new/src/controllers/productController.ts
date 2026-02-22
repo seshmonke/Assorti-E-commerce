@@ -24,8 +24,8 @@ export class ProductController {
      */
     static async getProductById(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
-            const { id } = req.params;
-            const product = await ProductModel.findById(Number(id));
+            const { id } = req.params as { id: string };
+            const product = await ProductModel.findById(id);
 
             if (!product) {
                 res.status(404).json({
@@ -46,12 +46,12 @@ export class ProductController {
     }
 
     /**
-     * GET /api/products/category/:category - Получить продукты по категории
+     * GET /api/products/category/:categoryId - Получить продукты по категории ID
      */
     static async getProductsByCategory(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
-            const { category } = req.params as { category: string };
-            const products = await ProductModel.findByCategory(category);
+            const { categoryId } = req.params as { categoryId: string };
+            const products = await ProductModel.findByCategory(categoryId);
 
             const response: ApiResponse<typeof products> = {
                 success: true,
@@ -114,10 +114,10 @@ export class ProductController {
             const data: CreateProductDTO = req.body;
 
             // Базовая валидация
-            if (!data.name || !data.price || !data.category) {
+            if (!data.name || !data.price || !data.categoryId) {
                 res.status(400).json({
                     success: false,
-                    error: 'Missing required fields: name, price, category',
+                    error: 'Missing required fields: name, price, categoryId',
                 });
                 return;
             }
@@ -139,10 +139,10 @@ export class ProductController {
      */
     static async updateProduct(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
-            const { id } = req.params;
+            const { id } = req.params as { id: string };
             const data: UpdateProductDTO = req.body;
 
-            const product = await ProductModel.update(Number(id), data);
+            const product = await ProductModel.update(id, data);
 
             const response: ApiResponse<typeof product> = {
                 success: true,
@@ -160,9 +160,9 @@ export class ProductController {
      */
     static async deleteProduct(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
-            const { id } = req.params;
+            const { id } = req.params as { id: string };
 
-            const product = await ProductModel.delete(Number(id));
+            const product = await ProductModel.delete(id);
 
             const response: ApiResponse<typeof product> = {
                 success: true,

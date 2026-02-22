@@ -11,11 +11,11 @@ export function CartModal({ isOpen, onClose }: CartModalProps) {
   const dispatch = useAppDispatch();
   const { items, totalPrice } = useAppSelector((state) => state.cart);
 
-  const handleRemove = (id: number, size: string) => {
+  const handleRemove = (id: string, size: string) => {
     dispatch(removeFromCart({ id, size }));
   };
 
-  const handleQuantityChange = (id: number, quantity: number, size: string) => {
+  const handleQuantityChange = (id: string, quantity: number, size: string) => {
     dispatch(updateQuantity({ id, quantity, size }));
   };
 

@@ -1,11 +1,11 @@
 import { Keyboard } from 'grammy';
 
 export const mainMenuKeyboard = new Keyboard()
-  .text('🔍 Найти товар').text('➕ Добавить товар')
+  .text('🔍 Найти товар').text('🔍 Найти категорию')
   .row()
-  .text('🔍 Найти категорию').text('➕ Добавить категорию')
+  .text('➕ Добавить товар').text('➕ Добавить категорию')
   .row()
-  .text('📋 Показать товары')
+  .text('📋 Показать товары').text('📋 Показать категории')
   .resized();
 
 export const backKeyboard = new Keyboard()

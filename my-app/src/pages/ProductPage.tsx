@@ -16,7 +16,7 @@ export function ProductPage() {
 
   useEffect(() => {
     if (id) {
-      dispatch(loadProductById(Number(id)));
+      dispatch(loadProductById(id));
     }
     return () => {
       dispatch(clearCurrentProduct());

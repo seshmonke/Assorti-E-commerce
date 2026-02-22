@@ -9,6 +9,7 @@ import { addProductConversation } from './conversations/addProduct';
 import { findCategoryConversation } from './conversations/findCategory';
 import { addCategoryConversation } from './conversations/addCategory';
 import { showProductsConversation } from './conversations/showProducts';
+import { showCategoriesConversation } from './conversations/showCategories';
 
 // Создаём экземпляр бота с типизированным контекстом
 export const bot = new Bot<MyContext>(env.BOT_API_KEY);
@@ -25,6 +26,7 @@ bot.use(createConversation(addProductConversation));
 bot.use(createConversation(findCategoryConversation));
 bot.use(createConversation(addCategoryConversation));
 bot.use(createConversation(showProductsConversation));
+bot.use(createConversation(showCategoriesConversation));
 
 // Команда /start — показываем главное меню
 bot.command('start', async (ctx) => {
@@ -58,6 +60,11 @@ bot.hears('➕ Добавить категорию', async (ctx) => {
 // Кнопка "Показать товары"
 bot.hears('📋 Показать товары', async (ctx) => {
   await ctx.conversation.enter('showProductsConversation');
+});
+
+// Кнопка "Показать категории"
+bot.hears('📋 Показать категории', async (ctx) => {
+  await ctx.conversation.enter('showCategoriesConversation');
 });
 
 // Обработчик ошибок

@@ -1,21 +1,11 @@
 // Типы для товаров (соответствуют бэкенду)
-export type ProductCategory =
-  | 'all'
-  | 'tshirts'
-  | 'jeans'
-  | 'jackets'
-  | 'hats'
-  | 'belts'
-  | 'glasses'
-  | 'shoes'
-  | 'bags';
-
 export interface Product {
-  id: number;
+  id: string;
   name: string;
   price: number;
   image: string;
-  category: ProductCategory;
+  categoryId: string;
+  category?: Category;
   description: string;
   sizes: unknown;
   composition: unknown;
@@ -28,7 +18,7 @@ export interface CreateProductData {
   name: string;
   price: number;
   image: string;
-  category: ProductCategory;
+  categoryId: string;
   description: string;
   sizes: unknown;
   composition: unknown;
@@ -39,7 +29,7 @@ export interface UpdateProductData {
   name?: string;
   price?: number;
   image?: string;
-  category?: ProductCategory;
+  categoryId?: string;
   description?: string;
   sizes?: unknown;
   composition?: unknown;
@@ -50,7 +40,7 @@ export interface UpdateProductData {
 export type CategorySection = 'clothing' | 'accessories';
 
 export interface Category {
-  id: number;
+  id: string;
   name: string;
   section: CategorySection;
   order: number;

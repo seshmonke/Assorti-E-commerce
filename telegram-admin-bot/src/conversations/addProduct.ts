@@ -1,24 +1,12 @@
 import { type Conversation, type ConversationFlavor } from '@grammyjs/conversations';
-import { type Context, Keyboard } from 'grammy';
+import { type Context } from 'grammy';
 import { apiService } from '../services/apiService';
 import { mainMenuKeyboard, backKeyboard } from '../keyboards/mainMenu';
 import { logger } from '../utils/logger';
-import type { ProductCategory } from '../types';
+import type { Category } from '../types';
 
 type MyContext = ConversationFlavor<Context>;
 type MyConversation = Conversation<MyContext, MyContext>;
-
-const categorySelectKeyboard = new Keyboard()
-  .text('⬅️ Назад')
-  .row()
-  .text('all').text('tshirts').text('jeans')
-  .row()
-  .text('jackets').text('hats').text('belts')
-  .row()
-  .text('glasses').text('shoes').text('bags')
-  .resized();
-
-const VALID_CATEGORIES = ['all', 'tshirts', 'jeans', 'jackets', 'hats', 'belts', 'glasses', 'shoes', 'bags'];
 
 export async function addProductConversation(
   conversation: MyConversation,
@@ -80,9 +68,18 @@ export async function addProductConversation(
   }
 
   // Шаг 4: Категория
-  await ctx.reply('Шаг 4/8: Выберите категорию:', { reply_markup: categorySelectKeyboard });
+  let categories: Category[] = [];
+  try {
+    categories = await conversation.external(() => apiService.getAllCategories());
+  } catch {
+    await ctx.reply('⚠️ Ошибка при загрузке категорий.', { reply_markup: mainMenuKeyboard });
+    return;
+  }
 
-  let category: ProductCategory = 'all';
+  const categoryListText = ['Шаг 4/8: Выберите категорию (введите номер):\n', ...categories.map((cat, idx) => `${idx + 1}. ${cat.name}`)].join('\n');
+  await ctx.reply(categoryListText, { reply_markup: backKeyboard });
+
+  let categoryId = '';
   while (true) {
     const c = await conversation.wait();
     const t = c.message?.text?.trim();
@@ -91,11 +88,12 @@ export async function addProductConversation(
       await ctx.reply('Главное меню', { reply_markup: mainMenuKeyboard });
       return;
     }
-    if (!VALID_CATEGORIES.includes(t)) {
-      await ctx.reply('❌ Выберите категорию из списка:');
+    const num = parseInt(t, 10);
+    if (isNaN(num) || num < 1 || num > categories.length) {
+      await ctx.reply(`❌ Введите число от 1 до ${categories.length}:`, { reply_markup: backKeyboard });
       continue;
     }
-    category = t as ProductCategory;
+    categoryId = categories[num - 1].id;
     break;
   }
 
@@ -175,7 +173,7 @@ export async function addProductConversation(
   // Создаём товар
   try {
     const product = await conversation.external(() =>
-      apiService.createProduct({ name, price, image, category, description, sizes, composition, discount }),
+      apiService.createProduct({ name, price, image, categoryId, description, sizes, composition, discount }),
     );
     await ctx.reply(
       `✅ Товар успешно добавлен!\n\n📦 <b>${product.name}</b>\n🆔 ID: <code>${product.id}</code>`,

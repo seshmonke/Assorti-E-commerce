@@ -1,20 +1,12 @@
 import { useParams } from 'react-router-dom';
 import { ProductList } from '../components/ProductList';
-import { categoryNames } from '../types/categories';
-import type { ProductCategory } from '../types/categories';
+import { useAppSelector } from '../store/hooks';
 
 export function CategoryPage() {
-  const { category } = useParams<{ category: string }>();
+  const { categoryId } = useParams<{ categoryId: string }>();
+  const categories = useAppSelector((state) => state.categories.items);
 
-  const validCategory = category && category in categoryNames
-    ? (category as ProductCategory)
-    : null;
-
-  const categoryName = validCategory
-    ? categoryNames[validCategory]
-    : 'Категория';
-
-  if (!validCategory) {
+  if (!categoryId) {
     return (
       <main className="flex-grow-1 py-4">
         <div className="container">
@@ -24,11 +16,25 @@ export function CategoryPage() {
     );
   }
 
+  if (categoryId === 'sale') {
+    return (
+      <main className="flex-grow-1 py-4">
+        <div className="container">
+          <h1 className="mb-4">Распродажа</h1>
+          <ProductList categoryId="sale" />
+        </div>
+      </main>
+    );
+  }
+
+  const category = categories.find((c) => c.id === categoryId);
+  const categoryName = category?.name ?? 'Загрузка...';
+
   return (
     <main className="flex-grow-1 py-4">
       <div className="container">
         <h1 className="mb-4">{categoryName}</h1>
-        <ProductList category={validCategory} />
+        <ProductList categoryId={categoryId} />
       </div>
     </main>
   );

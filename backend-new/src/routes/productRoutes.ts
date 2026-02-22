@@ -8,7 +8,7 @@ const router = Router();
 router.get('/', ProductController.getAllProducts);
 router.get('/sale', ProductController.getProductsOnSale);
 router.get('/search', ProductController.searchProducts);
-router.get('/category/:category', ProductController.getProductsByCategory);
+router.get('/category/:categoryId', ProductController.getProductsByCategory);
 router.get('/:id', ProductController.getProductById);
 
 // Защищённые маршруты (требуют аутентификации)
