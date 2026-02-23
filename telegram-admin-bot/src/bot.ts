@@ -10,6 +10,8 @@ import { findCategoryConversation } from './conversations/findCategory';
 import { addCategoryConversation } from './conversations/addCategory';
 import { showProductsConversation } from './conversations/showProducts';
 import { showCategoriesConversation } from './conversations/showCategories';
+import { showOrdersConversation } from './conversations/showOrders';
+import { findOrderConversation } from './conversations/findOrder';
 
 // Создаём экземпляр бота с типизированным контекстом
 export const bot = new Bot<MyContext>(env.BOT_API_KEY);
@@ -27,6 +29,8 @@ bot.use(createConversation(findCategoryConversation));
 bot.use(createConversation(addCategoryConversation));
 bot.use(createConversation(showProductsConversation));
 bot.use(createConversation(showCategoriesConversation));
+bot.use(createConversation(showOrdersConversation));
+bot.use(createConversation(findOrderConversation));
 
 // Команда /start — показываем главное меню
 bot.command('start', async (ctx) => {
@@ -65,6 +69,16 @@ bot.hears('📋 Показать товары', async (ctx) => {
 // Кнопка "Показать категории"
 bot.hears('📋 Показать категории', async (ctx) => {
   await ctx.conversation.enter('showCategoriesConversation');
+});
+
+// Кнопка "Посмотреть заказы"
+bot.hears('📦 Посмотреть заказы', async (ctx) => {
+  await ctx.conversation.enter('showOrdersConversation');
+});
+
+// Кнопка "Найти заказ"
+bot.hears('🔎 Найти заказ', async (ctx) => {
+  await ctx.conversation.enter('findOrderConversation');
 });
 
 // Обработчик ошибок

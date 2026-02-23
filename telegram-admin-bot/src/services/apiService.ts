@@ -8,6 +8,11 @@ import {
   UpdateProductData,
   CreateCategoryData,
   UpdateCategoryData,
+  Order,
+  CreateOrderData,
+  UpdateOrderStatusData,
+  OrderStatus,
+  PaymentResult,
   ApiResponse,
 } from '../types';
 
@@ -178,6 +183,79 @@ class ApiService {
       await this.api.delete(`/categories/${id}`);
     } catch (error) {
       logger.error('Failed to delete category', { id, error });
+      throw error;
+    }
+  }
+
+  // ===== ЗАКАЗЫ =====
+
+  async getAllOrders(status?: OrderStatus): Promise<Order[]> {
+    try {
+      const params = status ? { status } : {};
+      const response = await this.api.get<ApiResponse<Order[]>>('/orders', { params });
+      return response.data.data || [];
+    } catch (error) {
+      logger.error('Failed to get orders', error);
+      throw error;
+    }
+  }
+
+  async getOrderById(id: string): Promise<Order | null> {
+    try {
+      const response = await this.api.get<ApiResponse<Order>>(`/orders/${id}`);
+      return response.data.data || null;
+    } catch (error) {
+      logger.error('Failed to get order', { id, error });
+      throw error;
+    }
+  }
+
+  async createOrder(data: CreateOrderData): Promise<Order> {
+    try {
+      const response = await this.api.post<ApiResponse<Order>>('/orders', data);
+      if (!response.data.data) {
+        throw new Error('No data returned from server');
+      }
+      return response.data.data;
+    } catch (error) {
+      logger.error('Failed to create order', { data, error });
+      throw error;
+    }
+  }
+
+  async updateOrderStatus(id: string, data: UpdateOrderStatusData): Promise<Order> {
+    try {
+      const response = await this.api.put<ApiResponse<Order>>(`/orders/${id}/status`, data);
+      if (!response.data.data) {
+        throw new Error('No data returned from server');
+      }
+      return response.data.data;
+    } catch (error) {
+      logger.error('Failed to update order status', { id, data, error });
+      throw error;
+    }
+  }
+
+  async deleteOrder(id: string): Promise<void> {
+    try {
+      await this.api.delete(`/orders/${id}`);
+    } catch (error) {
+      logger.error('Failed to delete order', { id, error });
+      throw error;
+    }
+  }
+
+  // ===== ПЛАТЕЖИ =====
+
+  async createPayment(orderId: string): Promise<PaymentResult> {
+    try {
+      const response = await this.api.post<ApiResponse<PaymentResult>>('/payments/create', { orderId });
+      if (!response.data.data) {
+        throw new Error('No data returned from server');
+      }
+      return response.data.data;
+    } catch (error) {
+      logger.error('Failed to create payment', { orderId, error });
       throw error;
     }
   }

@@ -19,19 +19,19 @@ export function CartModal({ isOpen, onClose }: CartModalProps) {
     dispatch(updateQuantity({ id, quantity, size }));
   };
 
-  // Расчёт цены без скидки и общей суммы скидки
-  const calculatePriceWithoutDiscount = (item: typeof items[0]): number => {
+  // price — оригинальная цена из БД, итоговая = price * (1 - discount/100)
+  const calculateFinalPrice = (item: typeof items[0]): number => {
     if (!item.discount) return item.price;
-    return Math.round(item.price / (1 - item.discount / 100));
+    return Math.round(item.price * (1 - item.discount / 100));
   };
 
   const calculateItemDiscount = (item: typeof items[0]): number => {
-    const priceWithoutDiscount = calculatePriceWithoutDiscount(item);
-    return (priceWithoutDiscount - item.price) * item.quantity;
+    if (!item.discount) return 0;
+    return (item.price - calculateFinalPrice(item)) * item.quantity;
   };
 
   const totalDiscount = items.reduce((sum, item) => sum + calculateItemDiscount(item), 0);
-  const totalPriceWithoutDiscount = items.reduce((sum, item) => sum + calculatePriceWithoutDiscount(item) * item.quantity, 0);
+  const totalPriceWithoutDiscount = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   return (
     <div
@@ -75,7 +75,7 @@ export function CartModal({ isOpen, onClose }: CartModalProps) {
                   </thead>
                   <tbody>
                     {items.map((item) => {
-                      const priceWithoutDiscount = calculatePriceWithoutDiscount(item);
+                      const finalPrice = calculateFinalPrice(item);
                       return (
                         <tr key={`${item.id}-${item.size}`}>
                           <td>
@@ -96,7 +96,7 @@ export function CartModal({ isOpen, onClose }: CartModalProps) {
                           <td>{item.size}</td>
                           <td>
                             <div>
-                              <span className="fw-bold text-danger">{item.price} ₽</span>
+                              <span className="fw-bold text-danger">{finalPrice} ₽</span>
                               {item.discount && (
                                 <div className="small text-success">-{item.discount}%</div>
                               )}
@@ -106,7 +106,7 @@ export function CartModal({ isOpen, onClose }: CartModalProps) {
                             <td>
                               {item.discount ? (
                                 <span className="text-muted text-decoration-line-through">
-                                  {priceWithoutDiscount} ₽
+                                  {item.price} ₽
                                 </span>
                               ) : (
                                 <span>{item.price} ₽</span>
@@ -137,7 +137,7 @@ export function CartModal({ isOpen, onClose }: CartModalProps) {
                             </div>
                           </td>
                           <td className="fw-bold">
-                            {item.price * item.quantity} ₽
+                            {finalPrice * item.quantity} ₽
                           </td>
                           <td>
                             <button

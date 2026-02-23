@@ -97,7 +97,19 @@ export function ProductPage() {
 
             {/* Цена */}
             <div className="mb-4">
-              <p className="fs-3 fw-bold text-danger">{product.price} ₽</p>
+              {product.discount != null && product.discount > 0 ? (
+                <div className="d-flex align-items-center gap-3">
+                  <p className="fs-3 fw-bold text-danger mb-0">
+                    {Math.round(product.price * (1 - product.discount / 100))} ₽
+                  </p>
+                  <p className="fs-5 text-muted text-decoration-line-through mb-0">
+                    {product.price} ₽
+                  </p>
+                  <span className="badge bg-danger fs-6">-{product.discount}%</span>
+                </div>
+              ) : (
+                <p className="fs-3 fw-bold text-danger mb-0">{product.price} ₽</p>
+              )}
             </div>
 
             {/* Описание */}

@@ -80,9 +80,11 @@ export function ProductList({ categoryId }: ProductListProps) {
               <div className="mt-auto">
                 {product.discount != null && product.discount > 0 ? (
                   <div>
-                    <p className="fw-bold fs-5 mb-1 text-danger">{product.price} ₽</p>
+                    <p className="fw-bold fs-5 mb-1 text-danger">
+                      {Math.round(product.price * (1 - product.discount / 100))} ₽
+                    </p>
                     <p className="text-muted text-decoration-line-through small mb-0">
-                      {Math.round(product.price / (1 - product.discount / 100))} ₽
+                      {product.price} ₽
                     </p>
                   </div>
                 ) : (

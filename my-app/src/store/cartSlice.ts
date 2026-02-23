@@ -27,7 +27,12 @@ const initialState: CartState = {
 };
 
 const calculateTotalPrice = (items: CartItem[]): number => {
-  return items.reduce((total, item) => total + item.price * item.quantity, 0);
+  return items.reduce((total, item) => {
+    const finalPrice = item.discount
+      ? Math.round(item.price * (1 - item.discount / 100))
+      : item.price;
+    return total + finalPrice * item.quantity;
+  }, 0);
 };
 
 const saveToLocalStorage = (items: CartItem[]) => {

@@ -1,4 +1,4 @@
-import express from 'express';
+import 'dotenv/config';
 import { buildApp } from './app.js';
 
 const port = Number(process.env.PORT) || 3000;

@@ -3,6 +3,7 @@ import { type Context } from 'grammy';
 import { apiService } from '../services/apiService';
 import { mainMenuKeyboard, backKeyboard } from '../keyboards/mainMenu';
 import { logger } from '../utils/logger';
+import { editProductById } from './editProduct';
 import type { Product, Category } from '../types';
 
 type MyContext = ConversationFlavor<Context>;
@@ -44,6 +45,7 @@ export async function showProductsConversation(
 
   await ctx.reply(buildCategoryList(categories), { reply_markup: backKeyboard });
 
+  // Цикл выбора категории
   while (true) {
     const inputCtx = await conversation.wait();
     const text = inputCtx.message?.text?.trim();
@@ -77,9 +79,35 @@ export async function showProductsConversation(
       continue;
     }
 
-    await ctx.reply(formatProductList(products), {
-      parse_mode: 'HTML',
-      reply_markup: backKeyboard,
-    });
+    await ctx.reply(formatProductList(products), { parse_mode: 'HTML' });
+    await ctx.reply(
+      '💡 Введите ID товара для просмотра и редактирования, или нажмите ⬅️ Назад:',
+      { reply_markup: backKeyboard },
+    );
+
+    // Цикл ввода ID товара
+    while (true) {
+      const idCtx = await conversation.wait();
+      const idText = idCtx.message?.text?.trim();
+      if (!idText) continue;
+
+      if (idText === '⬅️ Назад') {
+        // Возвращаемся к выбору категории
+        await ctx.reply(buildCategoryList(categories), { reply_markup: backKeyboard });
+        break;
+      }
+
+      const result = await editProductById(conversation, ctx, idText);
+
+      if (result === 'done') {
+        return;
+      }
+
+      // result === 'back' — возвращаемся к промпту ввода ID товара
+      await ctx.reply(
+        '💡 Введите ID товара для просмотра и редактирования, или нажмите ⬅️ Назад:',
+        { reply_markup: backKeyboard },
+      );
+    }
   }
 }

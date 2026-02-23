@@ -12,6 +12,36 @@ export class CategoryModel {
     }
 
     /**
+     * Получить максимальный order в разделе
+     */
+    static async getMaxOrder(section: string): Promise<number> {
+        const result = await prisma.category.aggregate({
+            where: { section },
+            _max: { order: true },
+        });
+        return result._max.order ?? 0;
+    }
+
+    /**
+     * Перенумеровать все категории в разделе (1, 2, 3, ...)
+     */
+    static async renumberSection(section: string): Promise<void> {
+        const categories = await prisma.category.findMany({
+            where: { section },
+            orderBy: { order: 'asc' },
+            select: { id: true },
+        });
+        await Promise.all(
+            categories.map((cat, idx) =>
+                prisma.category.update({
+                    where: { id: cat.id },
+                    data: { order: idx + 1 },
+                }),
+            ),
+        );
+    }
+
+    /**
      * Получить категорию по ID
      */
     static async findById(id: string): Promise<ICategory | null> {

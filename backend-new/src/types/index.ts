@@ -56,6 +56,35 @@ export interface UpdateCategoryDTO {
     order?: number;
 }
 
+export type OrderStatus = 'pending_payment' | 'paid' | 'delivered';
+
+export interface IOrder {
+    id: string;
+    productId: string;
+    product?: IProduct;
+    quantity: number;
+    totalPrice: number;
+    status: OrderStatus;
+    paymentId: string | null;
+    confirmationUrl: string | null;
+    telegramUserId: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export interface CreateOrderDTO {
+    productId: string;
+    quantity?: number;
+    totalPrice: number;
+    telegramUserId?: string;
+}
+
+export interface UpdateOrderStatusDTO {
+    status: OrderStatus;
+    paymentId?: string;
+    confirmationUrl?: string;
+}
+
 export interface AuthPayload {
     userId?: string;
     role?: string;

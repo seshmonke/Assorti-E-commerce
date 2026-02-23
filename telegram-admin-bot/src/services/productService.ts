@@ -5,7 +5,7 @@ import { Product, Category, CreateProductData, UpdateProductData, CreateCategory
 class ProductService {
   // ===== ТОВАРЫ =====
 
-  async getProductById(id: number): Promise<Product | null> {
+  async getProductById(id: string): Promise<Product | null> {
     try {
       return await apiService.getProductById(id);
     } catch (error) {
@@ -25,7 +25,7 @@ class ProductService {
     }
   }
 
-  async updateProduct(id: number, data: UpdateProductData): Promise<Product> {
+  async updateProduct(id: string, data: UpdateProductData): Promise<Product> {
     try {
       const product = await apiService.updateProduct(id, data);
       logger.info('Product updated successfully', { productId: id });
@@ -38,7 +38,7 @@ class ProductService {
 
   // ===== КАТЕГОРИИ =====
 
-  async getCategoryById(id: number): Promise<Category | null> {
+  async getCategoryById(id: string): Promise<Category | null> {
     try {
       return await apiService.getCategoryById(id);
     } catch (error) {
@@ -58,7 +58,7 @@ class ProductService {
     }
   }
 
-  async updateCategory(id: number, data: UpdateCategoryData): Promise<Category> {
+  async updateCategory(id: string, data: UpdateCategoryData): Promise<Category> {
     try {
       const category = await apiService.updateCategory(id, data);
       logger.info('Category updated successfully', { categoryId: id });

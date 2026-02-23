@@ -6,6 +6,8 @@ export const mainMenuKeyboard = new Keyboard()
   .text('➕ Добавить товар').text('➕ Добавить категорию')
   .row()
   .text('📋 Показать товары').text('📋 Показать категории')
+  .row()
+  .text('📦 Посмотреть заказы').text('🔎 Найти заказ')
   .resized();
 
 export const backKeyboard = new Keyboard()

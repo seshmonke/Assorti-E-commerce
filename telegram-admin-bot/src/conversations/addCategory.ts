@@ -19,7 +19,7 @@ export async function addCategoryConversation(
   ctx: MyContext,
 ): Promise<void> {
   // Шаг 1: Название
-  await ctx.reply('➕ Добавление категории\n\nШаг 1/3: Введите название категории:', {
+  await ctx.reply('➕ Добавление категории\n\nШаг 1/2: Введите название категории:', {
     reply_markup: backKeyboard,
   });
 
@@ -37,7 +37,7 @@ export async function addCategoryConversation(
   }
 
   // Шаг 2: Раздел
-  await ctx.reply('Шаг 2/3: Выберите раздел:', { reply_markup: sectionKeyboard });
+  await ctx.reply('Шаг 2/2: Выберите раздел:', { reply_markup: sectionKeyboard });
 
   let section: CategorySection = 'clothing';
   while (true) {
@@ -53,31 +53,10 @@ export async function addCategoryConversation(
     await ctx.reply('❌ Выберите раздел из кнопок:');
   }
 
-  // Шаг 3: Порядковый номер
-  await ctx.reply('Шаг 3/3: Введите порядковый номер (число):', { reply_markup: backKeyboard });
-
-  let order = 0;
-  while (true) {
-    const c = await conversation.wait();
-    const t = c.message?.text?.trim();
-    if (!t) continue;
-    if (t === '⬅️ Назад') {
-      await ctx.reply('Главное меню', { reply_markup: mainMenuKeyboard });
-      return;
-    }
-    const parsed = parseInt(t, 10);
-    if (isNaN(parsed)) {
-      await ctx.reply('❌ Введите числовое значение:');
-      continue;
-    }
-    order = parsed;
-    break;
-  }
-
-  // Создаём категорию
+  // Создаём категорию (order назначается автоматически на бэкенде)
   try {
     const category = await conversation.external(() =>
-      apiService.createCategory({ name, section, order }),
+      apiService.createCategory({ name, section }),
     );
     const sectionLabel = section === 'clothing' ? 'Одежда' : 'Аксессуары';
     await ctx.reply(

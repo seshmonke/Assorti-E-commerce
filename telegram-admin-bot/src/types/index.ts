@@ -51,13 +51,50 @@ export interface Category {
 export interface CreateCategoryData {
   name: string;
   section: CategorySection;
-  order: number;
+  order?: number;
 }
 
 export interface UpdateCategoryData {
   name?: string;
   section?: CategorySection;
   order?: number;
+}
+
+// Типы для заказов
+export type OrderStatus = 'pending_payment' | 'paid' | 'delivered';
+
+export interface Order {
+  id: string;
+  productId: string;
+  product?: Product;
+  quantity: number;
+  totalPrice: number;
+  status: OrderStatus;
+  paymentId: string | null;
+  confirmationUrl: string | null;
+  telegramUserId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateOrderData {
+  productId: string;
+  quantity?: number;
+  totalPrice: number;
+  telegramUserId?: string;
+}
+
+export interface UpdateOrderStatusData {
+  status: OrderStatus;
+  paymentId?: string;
+}
+
+// Результат создания платежа
+export interface PaymentResult {
+  paymentId: string;
+  confirmationUrl: string;
+  confirmationToken: string | undefined;
+  status: string;
 }
 
 // Ответ API
