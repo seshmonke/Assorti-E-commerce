@@ -13,6 +13,7 @@ import {
   UpdateOrderStatusData,
   OrderStatus,
   PaymentResult,
+  PaymentCheckResult,
   ApiResponse,
 } from '../types';
 
@@ -98,9 +99,7 @@ class ApiService {
   async createProduct(data: CreateProductData): Promise<Product> {
     try {
       const response = await this.api.post<ApiResponse<Product>>('/products', data);
-      if (!response.data.data) {
-        throw new Error('No data returned from server');
-      }
+      if (!response.data.data) throw new Error('No data returned from server');
       return response.data.data;
     } catch (error) {
       logger.error('Failed to create product', { data, error });
@@ -111,9 +110,7 @@ class ApiService {
   async updateProduct(id: string, data: UpdateProductData): Promise<Product> {
     try {
       const response = await this.api.put<ApiResponse<Product>>(`/products/${id}`, data);
-      if (!response.data.data) {
-        throw new Error('No data returned from server');
-      }
+      if (!response.data.data) throw new Error('No data returned from server');
       return response.data.data;
     } catch (error) {
       logger.error('Failed to update product', { id, data, error });
@@ -155,9 +152,7 @@ class ApiService {
   async createCategory(data: CreateCategoryData): Promise<Category> {
     try {
       const response = await this.api.post<ApiResponse<Category>>('/categories', data);
-      if (!response.data.data) {
-        throw new Error('No data returned from server');
-      }
+      if (!response.data.data) throw new Error('No data returned from server');
       return response.data.data;
     } catch (error) {
       logger.error('Failed to create category', { data, error });
@@ -168,9 +163,7 @@ class ApiService {
   async updateCategory(id: string, data: UpdateCategoryData): Promise<Category> {
     try {
       const response = await this.api.put<ApiResponse<Category>>(`/categories/${id}`, data);
-      if (!response.data.data) {
-        throw new Error('No data returned from server');
-      }
+      if (!response.data.data) throw new Error('No data returned from server');
       return response.data.data;
     } catch (error) {
       logger.error('Failed to update category', { id, data, error });
@@ -213,9 +206,7 @@ class ApiService {
   async createOrder(data: CreateOrderData): Promise<Order> {
     try {
       const response = await this.api.post<ApiResponse<Order>>('/orders', data);
-      if (!response.data.data) {
-        throw new Error('No data returned from server');
-      }
+      if (!response.data.data) throw new Error('No data returned from server');
       return response.data.data;
     } catch (error) {
       logger.error('Failed to create order', { data, error });
@@ -226,12 +217,21 @@ class ApiService {
   async updateOrderStatus(id: string, data: UpdateOrderStatusData): Promise<Order> {
     try {
       const response = await this.api.put<ApiResponse<Order>>(`/orders/${id}/status`, data);
-      if (!response.data.data) {
-        throw new Error('No data returned from server');
-      }
+      if (!response.data.data) throw new Error('No data returned from server');
       return response.data.data;
     } catch (error) {
       logger.error('Failed to update order status', { id, data, error });
+      throw error;
+    }
+  }
+
+  async cancelOrder(id: string): Promise<Order> {
+    try {
+      const response = await this.api.post<ApiResponse<Order>>(`/orders/${id}/cancel`);
+      if (!response.data.data) throw new Error('No data returned from server');
+      return response.data.data;
+    } catch (error) {
+      logger.error('Failed to cancel order', { id, error });
       throw error;
     }
   }
@@ -250,12 +250,21 @@ class ApiService {
   async createPayment(orderId: string): Promise<PaymentResult> {
     try {
       const response = await this.api.post<ApiResponse<PaymentResult>>('/payments/create', { orderId });
-      if (!response.data.data) {
-        throw new Error('No data returned from server');
-      }
+      if (!response.data.data) throw new Error('No data returned from server');
       return response.data.data;
     } catch (error) {
       logger.error('Failed to create payment', { orderId, error });
+      throw error;
+    }
+  }
+
+  async checkPayment(orderId: string): Promise<PaymentCheckResult> {
+    try {
+      const response = await this.api.get<ApiResponse<PaymentCheckResult>>(`/payments/check/${orderId}`);
+      if (!response.data.data) throw new Error('No data returned from server');
+      return response.data.data;
+    } catch (error) {
+      logger.error('Failed to check payment', { orderId, error });
       throw error;
     }
   }

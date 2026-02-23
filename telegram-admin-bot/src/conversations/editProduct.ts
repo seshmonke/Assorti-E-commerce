@@ -1,5 +1,5 @@
 import { type Conversation, type ConversationFlavor } from '@grammyjs/conversations';
-import { type Context, InlineKeyboard, Keyboard } from 'grammy';
+import { type Context, Keyboard } from 'grammy';
 import { apiService } from '../services/apiService';
 import { mainMenuKeyboard, backKeyboard } from '../keyboards/mainMenu';
 import { logger } from '../utils/logger';
@@ -36,25 +36,26 @@ export function formatProductCard(product: Product): string {
   if (product.discount !== null && product.discount !== undefined) {
     text += `🏷 Скидка: ${product.discount}%\n`;
   }
+  text += `🔒 Бронь: ${product.reserved ? '✅ Забронирован' : '❌ Не забронирован'}\n`;
   return text;
 }
 
 export const productActionKeyboard = new Keyboard()
-  .text('⬅️ Назад').text('💰 Продажа')
+  .text('⬅️ Назад').text('🏠 Главное меню')
   .row()
-  .text('✏️ Редактировать товар')
+  .text('💰 Продажа').text('✏️ Редактировать товар')
   .resized();
 
 export const editProductKeyboard = new Keyboard()
-  .text('⬅️ Назад').text('✏️ Изменить название')
+  .text('⬅️ Назад').text('🏠 Главное меню')
   .row()
-  .text('✏️ Изменить цену').text('✏️ Изменить картинку')
+  .text('✏️ Изменить название').text('✏️ Изменить цену')
   .row()
-  .text('✏️ Изменить категорию').text('✏️ Изменить размер')
+  .text('✏️ Изменить картинку').text('✏️ Изменить категорию')
   .row()
-  .text('✏️ Изменить состав').text('✏️ Изменить скидку')
+  .text('✏️ Изменить размер').text('✏️ Изменить состав')
   .row()
-  .text('🗑 Удалить товар')
+  .text('✏️ Изменить скидку').text('🗑 Удалить товар')
   .resized();
 
 const confirmDeleteKeyboard = new Keyboard()
@@ -108,6 +109,11 @@ export async function editProductById(
       return 'back';
     }
 
+    if (actionText === '🏠 Главное меню') {
+      await ctx.reply('Главное меню', { reply_markup: mainMenuKeyboard });
+      return 'done';
+    }
+
     // === ПРОДАЖА ===
     if (actionText === '💰 Продажа') {
       const result = await handleSale(conversation, ctx, product!);
@@ -137,70 +143,54 @@ export async function editProductById(
 }
 
 /**
- * Обрабатывает продажу товара — создаёт заказ и отправляет ссылку на оплату
+ * Обрабатывает продажу товара — создаёт заказ с оплатой наличными
  */
 async function handleSale(
   conversation: MyConversation,
   ctx: MyContext,
   product: Product,
 ): Promise<'back' | 'done'> {
+  // Проверяем бронь до отправки запроса
+  if (product.reserved) {
+    await ctx.reply(
+      `🔒 <b>Товар забронирован!</b>\n\n` +
+      `📦 <b>${product.name}</b> уже забронирован другим заказом и не может быть продан.\n\n` +
+      `Если бронь нужно снять — найдите соответствующий заказ и отмените его.`,
+      { parse_mode: 'HTML', reply_markup: productActionKeyboard },
+    );
+    return 'back';
+  }
+
   try {
-    // Создаём заказ
+    // Создаём заказ с оплатой наличными
     const order = await conversation.external(() =>
       apiService.createOrder({
         productId: product.id,
         quantity: 1,
         totalPrice: product.price,
         telegramUserId: String(ctx.from?.id ?? ''),
+        paymentMethod: 'cash',
       }),
     );
-    logger.info('Order created via bot', { orderId: order.id, productId: product.id });
+    logger.info('Order created via bot (cash)', { orderId: order.id, productId: product.id });
 
     await ctx.reply(
-      `✅ Заказ создан!\n\n🆔 ID заказа: <code>${order.id}</code>\n📦 Товар: <b>${product.name}</b>\n💰 Сумма: <b>${order.totalPrice} руб.</b>\n📊 Статус: ⏳ Ожидает оплаты\n\n⏳ Создаю ссылку на оплату...`,
+      `✅ <b>Заказ создан!</b>\n\n` +
+      `🆔 ID заказа: <code>${order.id}</code>\n` +
+      `📦 Товар: <b>${product.name}</b>\n` +
+      `💰 Сумма: <b>${order.totalPrice} руб.</b>\n` +
+      `💵 Оплата: Наличными\n` +
+      `📊 Статус: ⏳ Ожидает оплаты\n\n` +
+      `Когда клиент оплатит — найдите заказ и отметьте его оплаченным.`,
       { parse_mode: 'HTML', reply_markup: productActionKeyboard },
     );
-
-    // Создаём платёж в ЮKassa
-    const payment = await conversation.external(() => apiService.createPayment(order.id));
-    logger.info('Payment created', { orderId: order.id, paymentId: payment.paymentId });
-
-    // Если есть confirmation_token (виджет) или confirmation_url (редирект)
-    const paymentUrl = payment.confirmationUrl || `https://yookassa.ru/checkout/payments/${payment.paymentId}`;
-
-    const inlineKb = new InlineKeyboard().url('💳 Оплатить', paymentUrl);
-
-    await ctx.reply(
-      `💳 <b>Ссылка на оплату готова!</b>\n\nНажмите кнопку ниже, чтобы оплатить заказ.\n\n<i>🔐 Тестовая карта: 4111 1111 1111 1111\nСрок: любой будущий | CVV: любые 3 цифры</i>`,
-      { parse_mode: 'HTML', reply_markup: inlineKb },
-    );
   } catch (err: any) {
-    logger.error('Failed to create order/payment via bot', { err });
-
-    // Проверяем конкретную причину ошибки
-    const httpStatus = err?.response?.status ?? err?.status;
-    const errorMsg = err?.response?.data?.error ?? err?.message ?? '';
-    const isAuthError =
-      httpStatus === 401 ||
-      String(httpStatus) === '401' ||
-      errorMsg.includes('401') ||
-      errorMsg.toLowerCase().includes('authentication failed') ||
-      errorMsg.toLowerCase().includes('invalid') && errorMsg.toLowerCase().includes('yookassa');
-
-    if (isAuthError) {
-      await ctx.reply(
-        '⚠️ <b>Ошибка при создании ссылки на оплату.</b>\n\n' +
-        '🔑 Невалидные ключи ЮKassa.\n' +
-        'Проверь <code>YOOKASSA_SHOP_ID</code> и <code>YOOKASSA_SECRET_KEY</code> в <code>backend-new/.env</code>\n\n' +
-        '📌 Заказ был создан и сохранён в базе данных.',
-        { parse_mode: 'HTML', reply_markup: productActionKeyboard },
-      );
-    } else {
-      await ctx.reply(
-        `⚠️ Ошибка при создании платежа: ${errorMsg || 'неизвестная ошибка'}`,
-        { reply_markup: productActionKeyboard },
-      );
-    }
+    logger.error('Failed to create order via bot', { err });
+    const errorMsg = err?.response?.data?.error ?? err?.message ?? 'неизвестная ошибка';
+    await ctx.reply(
+      `⚠️ Ошибка при создании заказа: ${errorMsg}`,
+      { reply_markup: productActionKeyboard },
+    );
   }
   return 'back';
 }
@@ -222,6 +212,11 @@ async function runEditLoop(
 
     if (editText === '⬅️ Назад') {
       return { action: 'back', updatedProduct: currentProduct };
+    }
+
+    if (editText === '🏠 Главное меню') {
+      await ctx.reply('Главное меню', { reply_markup: mainMenuKeyboard });
+      return { action: 'done', updatedProduct: null };
     }
 
     let fieldPrompt = '';

@@ -9,7 +9,7 @@ type MyContext = ConversationFlavor<Context>;
 type MyConversation = Conversation<MyContext, MyContext>;
 
 const sectionKeyboard = new Keyboard()
-  .text('⬅️ Назад')
+  .text('⬅️ Назад').text('🏠 Главное меню')
   .row()
   .text('Одежда').text('Аксессуары')
   .resized();
@@ -28,7 +28,7 @@ export async function addCategoryConversation(
     const c = await conversation.wait();
     const t = c.message?.text?.trim();
     if (!t) continue;
-    if (t === '⬅️ Назад') {
+    if (t === '⬅️ Назад' || t === '🏠 Главное меню') {
       await ctx.reply('Главное меню', { reply_markup: mainMenuKeyboard });
       return;
     }
@@ -44,7 +44,7 @@ export async function addCategoryConversation(
     const c = await conversation.wait();
     const t = c.message?.text?.trim();
     if (!t) continue;
-    if (t === '⬅️ Назад') {
+    if (t === '⬅️ Назад' || t === '🏠 Главное меню') {
       await ctx.reply('Главное меню', { reply_markup: mainMenuKeyboard });
       return;
     }

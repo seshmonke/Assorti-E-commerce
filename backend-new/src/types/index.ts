@@ -9,6 +9,7 @@ export interface IProduct {
     sizes: unknown;
     composition: unknown;
     discount: number | null;
+    reserved: boolean;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -56,7 +57,8 @@ export interface UpdateCategoryDTO {
     order?: number;
 }
 
-export type OrderStatus = 'pending_payment' | 'paid' | 'delivered';
+export type OrderStatus = 'pending_payment' | 'paid' | 'delivered' | 'cancelled';
+export type PaymentMethod = 'card' | 'cash';
 
 export interface IOrder {
     id: string;
@@ -65,6 +67,7 @@ export interface IOrder {
     quantity: number;
     totalPrice: number;
     status: OrderStatus;
+    paymentMethod: PaymentMethod;
     paymentId: string | null;
     confirmationUrl: string | null;
     telegramUserId: string | null;
@@ -77,6 +80,7 @@ export interface CreateOrderDTO {
     quantity?: number;
     totalPrice: number;
     telegramUserId?: string;
+    paymentMethod?: PaymentMethod;
 }
 
 export interface UpdateOrderStatusDTO {

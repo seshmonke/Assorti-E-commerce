@@ -3,7 +3,7 @@ import type { CreateOrderDTO, UpdateOrderStatusDTO, IOrder, OrderStatus } from '
 
 export class OrderModel {
     /**
-     * Получить ��се заказы
+     * Получить все заказы
      */
     static async findAll(): Promise<IOrder[]> {
         return prisma.order.findMany({
@@ -54,6 +54,7 @@ export class OrderModel {
                 quantity: data.quantity ?? 1,
                 totalPrice: data.totalPrice,
                 telegramUserId: data.telegramUserId ?? null,
+                paymentMethod: data.paymentMethod ?? 'card',
                 status: 'pending_payment',
             },
             include: { product: { include: { category: true } } },

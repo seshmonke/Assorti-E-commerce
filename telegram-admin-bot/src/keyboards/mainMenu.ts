@@ -11,5 +11,5 @@ export const mainMenuKeyboard = new Keyboard()
   .resized();
 
 export const backKeyboard = new Keyboard()
-  .text('⬅️ Назад')
+  .text('⬅️ Назад').text('🏠 Главное меню')
   .resized();

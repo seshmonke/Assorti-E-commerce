@@ -21,16 +21,12 @@ interface YookassaPaymentResponse {
 
 export interface CreatePaymentResult {
     paymentId: string;
+    /** URL для генерации QR-кода (СБП / ЮMoney) */
     confirmationUrl: string;
-    confirmationToken: string | undefined;
     status: string;
 }
 
 export class PaymentService {
-    /**
-     * Получить credentials ЮKassa из env.
-     * Читаем в момент вызова (не в конструкторе), чтобы dotenv успел загрузиться.
-     */
     private getCredentials(): { shopId: string; secretKey: string } {
         const shopId = process.env.YOOKASSA_SHOP_ID;
         const secretKey = process.env.YOOKASSA_SECRET_KEY;
@@ -46,25 +42,21 @@ export class PaymentService {
     }
 
     /**
-     * Создать платёж в ЮKassa
-     * @param orderId - ID заказа в нашей системе
-     * @param amount - сумма в копейках (целое число)
-     * @param description - описание платежа
-     * @param returnUrl - URL для возврата после оплаты
+     * Создать платёж в ЮKassa с QR-кодом (confirmation type = "qr")
+     * @param orderId - ID заказа
+     * @param amount - сумма в копейках
+     * @param description - описание
      */
     async createPayment(
         orderId: string,
         amount: number,
         description: string,
-        returnUrl?: string,
     ): Promise<CreatePaymentResult> {
         const { shopId, secretKey } = this.getCredentials();
         const idempotenceKey = randomUUID();
 
-        // Конвертируем копейки в рубли с двумя знаками после запятой
+        // Конвертируем копейки в рубли
         const amountInRubles = (amount / 100).toFixed(2);
-
-        const redirectUrl = returnUrl ?? process.env.YOOKASSA_RETURN_URL ?? 'https://t.me/';
 
         const payload = {
             amount: {
@@ -72,8 +64,7 @@ export class PaymentService {
                 currency: 'RUB',
             },
             confirmation: {
-                type: 'redirect',
-                return_url: redirectUrl,
+                type: 'qr',
             },
             capture: true,
             description,
@@ -102,7 +93,6 @@ export class PaymentService {
         return {
             paymentId: payment.id,
             confirmationUrl: payment.confirmation.confirmation_url ?? '',
-            confirmationToken: payment.confirmation.confirmation_token,
             status: payment.status,
         };
     }
@@ -118,36 +108,6 @@ export class PaymentService {
                 auth: {
                     username: shopId,
                     password: secretKey,
-                },
-            },
-        );
-        return response.data;
-    }
-
-    /**
-     * Подтвердить платёж (capture)
-     */
-    async capturePayment(paymentId: string, amount: number): Promise<YookassaPaymentResponse> {
-        const { shopId, secretKey } = this.getCredentials();
-        const idempotenceKey = randomUUID();
-        const amountInRubles = (amount / 100).toFixed(2);
-
-        const response = await axios.post<YookassaPaymentResponse>(
-            `${YOOKASSA_API_URL}/payments/${paymentId}/capture`,
-            {
-                amount: {
-                    value: amountInRubles,
-                    currency: 'RUB',
-                },
-            },
-            {
-                auth: {
-                    username: shopId,
-                    password: secretKey,
-                },
-                headers: {
-                    'Idempotence-Key': idempotenceKey,
-                    'Content-Type': 'application/json',
                 },
             },
         );

@@ -17,7 +17,7 @@ export async function findCategoryConversation(
     const text = idCtx.message?.text?.trim();
     if (!text) continue;
 
-    if (text === '⬅️ Назад') {
+    if (text === '⬅️ Назад' || text === '🏠 Главное меню') {
       await ctx.reply('Главное меню', { reply_markup: mainMenuKeyboard });
       return;
     }

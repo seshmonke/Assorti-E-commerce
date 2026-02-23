@@ -10,6 +10,7 @@ export interface Product {
   sizes: unknown;
   composition: unknown;
   discount: number | null;
+  reserved: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -61,7 +62,8 @@ export interface UpdateCategoryData {
 }
 
 // Типы для заказов
-export type OrderStatus = 'pending_payment' | 'paid' | 'delivered';
+export type OrderStatus = 'pending_payment' | 'paid' | 'delivered' | 'cancelled';
+export type PaymentMethod = 'card' | 'cash';
 
 export interface Order {
   id: string;
@@ -70,6 +72,7 @@ export interface Order {
   quantity: number;
   totalPrice: number;
   status: OrderStatus;
+  paymentMethod: PaymentMethod;
   paymentId: string | null;
   confirmationUrl: string | null;
   telegramUserId: string | null;
@@ -82,6 +85,7 @@ export interface CreateOrderData {
   quantity?: number;
   totalPrice: number;
   telegramUserId?: string;
+  paymentMethod?: PaymentMethod;
 }
 
 export interface UpdateOrderStatusData {
@@ -93,8 +97,13 @@ export interface UpdateOrderStatusData {
 export interface PaymentResult {
   paymentId: string;
   confirmationUrl: string;
-  confirmationToken: string | undefined;
   status: string;
+}
+
+// Результат проверки оплаты
+export interface PaymentCheckResult {
+  paymentStatus: string;
+  orderStatus: string;
 }
 
 // Ответ API

@@ -51,7 +51,7 @@ export async function showProductsConversation(
     const text = inputCtx.message?.text?.trim();
     if (!text) continue;
 
-    if (text === '⬅️ Назад') {
+    if (text === '⬅️ Назад' || text === '🏠 Главное меню') {
       await ctx.reply('Главное меню', { reply_markup: mainMenuKeyboard });
       return;
     }
@@ -81,11 +81,11 @@ export async function showProductsConversation(
 
     await ctx.reply(formatProductList(products), { parse_mode: 'HTML' });
     await ctx.reply(
-      '💡 Введите ID товара для просмотра и редактирования, или нажмите ⬅️ Назад:',
+      '💡 Введите номер или ID товара для просмотра и редактирования, или нажмите ⬅️ Назад:',
       { reply_markup: backKeyboard },
     );
 
-    // Цикл ввода ID товара
+    // Цикл ввода номера/ID товара
     while (true) {
       const idCtx = await conversation.wait();
       const idText = idCtx.message?.text?.trim();
@@ -97,15 +97,29 @@ export async function showProductsConversation(
         break;
       }
 
-      const result = await editProductById(conversation, ctx, idText);
+      if (idText === '🏠 Главное меню') {
+        await ctx.reply('Главное меню', { reply_markup: mainMenuKeyboard });
+        return;
+      }
+
+      // Определяем товар по порядковому номеру или по ID
+      let selectedId: string;
+      const num = parseInt(idText, 10);
+      if (!isNaN(num) && num >= 1 && num <= products.length) {
+        selectedId = products[num - 1].id;
+      } else {
+        selectedId = idText;
+      }
+
+      const result = await editProductById(conversation, ctx, selectedId);
 
       if (result === 'done') {
         return;
       }
 
-      // result === 'back' — возвращаемся к промпту ввода ID товара
+      // result === 'back' — возвращаемся к промпту ввода номера/ID товара
       await ctx.reply(
-        '💡 Введите ID товара для просмотра и редактирования, или нажмите ⬅️ Назад:',
+        '💡 Введите номер или ID товара для просмотра и редактирования, или нажмите ⬅️ Назад:',
         { reply_markup: backKeyboard },
       );
     }

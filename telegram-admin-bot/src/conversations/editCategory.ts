@@ -23,7 +23,9 @@ export function formatCategoryCard(category: Category): string {
 }
 
 export const editCategoryKeyboard = new Keyboard()
-  .text('⬅️ Назад').text('🗑 Удалить категорию')
+  .text('⬅️ Назад').text('🏠 Главное меню')
+  .row()
+  .text('🗑 Удалить категорию')
   .row()
   .text('✏️ Изменить название').text('✏️ Изменить раздел')
   .row()
@@ -76,6 +78,11 @@ export async function editCategoryById(
 
     if (editText === '⬅️ Назад') {
       return 'back';
+    }
+
+    if (editText === '🏠 Главное меню') {
+      await ctx.reply('Главное меню', { reply_markup: mainMenuKeyboard });
+      return 'done';
     }
 
     if (editText === '✏️ Изменить название') {

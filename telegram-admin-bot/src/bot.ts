@@ -41,6 +41,12 @@ bot.command('start', async (ctx) => {
   logger.info('Start command', { userId: ctx.from?.id });
 });
 
+// Кнопка "Главное меню" — глобальный выход из любого места
+bot.hears('🏠 Главное меню', async (ctx) => {
+  await ctx.conversation.exitAll();
+  await ctx.reply('👋 Главное меню:', { reply_markup: mainMenuKeyboard });
+});
+
 // Кнопка "Найти товар"
 bot.hears('🔍 Найти товар', async (ctx) => {
   await ctx.conversation.enter('findProductConversation');

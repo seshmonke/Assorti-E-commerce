@@ -1,31 +1,27 @@
 import type { Request, Response, NextFunction } from 'express';
 import { paymentService } from '../services/paymentService.js';
 import { OrderModel } from '../models/orderModel.js';
+import { ProductModel } from '../models/productModel.js';
 import type { ApiResponse } from '../types/index.js';
 
 export class PaymentController {
     /**
      * POST /api/payments/create
-     * Создаёт платёж в ЮKassa для указанного заказа
+     * Создаёт платёж в ЮKassa для указанного заказа.
+     * Возвращает confirmationUrl — URL для генерации QR-кода.
      */
     static async createPayment(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             const { orderId } = req.body as { orderId: string };
 
             if (!orderId) {
-                res.status(400).json({
-                    success: false,
-                    error: 'orderId is required',
-                });
+                res.status(400).json({ success: false, error: 'orderId is required' });
                 return;
             }
 
             const order = await OrderModel.findById(orderId);
             if (!order) {
-                res.status(404).json({
-                    success: false,
-                    error: 'Order not found',
-                });
+                res.status(404).json({ success: false, error: 'Order not found' });
                 return;
             }
 
@@ -37,12 +33,17 @@ export class PaymentController {
                 return;
             }
 
+            if (order.paymentMethod !== 'card') {
+                res.status(400).json({
+                    success: false,
+                    error: 'Payment via QR is only available for card payment method',
+                });
+                return;
+            }
+
             const productName = order.product?.name ?? 'Товар';
             const description = `Оплата заказа #${order.id.slice(0, 8)} — ${productName}`;
 
-            // Сумма в копейках (totalPrice уже в рублях * 100 или в рублях — смотри логику)
-            // У нас totalPrice хранится в рублях (целое число), ЮKassa ожидает рубли
-            // Поэтому умножаем на 100 для конвертации в копейки внутри сервиса
             const result = await paymentService.createPayment(
                 order.id,
                 order.totalPrice * 100,
@@ -63,36 +64,26 @@ export class PaymentController {
             };
             res.json(response);
         } catch (error: any) {
-            // Логируем полную ошибку для диагностики
             console.error('[PaymentController] createPayment error:', {
                 message: error?.message,
                 yooStatus: error?.response?.status,
                 yooData: error?.response?.data,
-                stack: error?.stack,
             });
 
             const yooStatus = error?.response?.status;
             const yooData = error?.response?.data;
 
-            // Ошибка конфигурации — env-переменные не заданы
             if (error?.message?.includes('YOOKASSA_SHOP_ID')) {
-                res.status(500).json({
-                    success: false,
-                    error: error.message,
-                });
+                res.status(500).json({ success: false, error: error.message });
                 return;
             }
-
-            // 401 = невалидные ключи ЮKassa
             if (yooStatus === 401) {
                 res.status(401).json({
                     success: false,
-                    error: 'YooKassa authentication failed: invalid YOOKASSA_SHOP_ID or YOOKASSA_SECRET_KEY. Check backend-new/.env',
+                    error: 'YooKassa authentication failed: invalid credentials',
                 });
                 return;
             }
-
-            // 400 = некорректный запрос к ЮKassa
             if (yooStatus === 400) {
                 res.status(400).json({
                     success: false,
@@ -100,8 +91,6 @@ export class PaymentController {
                 });
                 return;
             }
-
-            // Любая другая ошибка от ЮKassa
             if (yooStatus) {
                 res.status(502).json({
                     success: false,
@@ -110,6 +99,64 @@ export class PaymentController {
                 return;
             }
 
+            next(error);
+        }
+    }
+
+    /**
+     * GET /api/payments/check/:orderId
+     * Проверяет статус платежа по orderId.
+     * Если оплачен — обновляет заказ и удаляет товар.
+     */
+    static async checkPayment(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { orderId } = req.params as { orderId: string };
+
+            const order = await OrderModel.findById(orderId);
+            if (!order) {
+                res.status(404).json({ success: false, error: 'Order not found' });
+                return;
+            }
+
+            if (!order.paymentId) {
+                res.status(400).json({
+                    success: false,
+                    error: 'No payment associated with this order',
+                });
+                return;
+            }
+
+            const payment = await paymentService.getPayment(order.paymentId);
+
+            let message = 'Payment status checked';
+
+            if (payment.status === 'succeeded' && order.status !== 'paid') {
+                // Обновляем статус заказа
+                await OrderModel.updateStatus(order.id, {
+                    status: 'paid',
+                    paymentId: payment.id,
+                });
+
+                // Удаляем товар из БД
+                try {
+                    await ProductModel.delete(order.productId);
+                } catch {
+                    // Товар мог быть уже удалён
+                }
+
+                message = 'Payment confirmed — order marked as paid';
+            }
+
+            const response: ApiResponse<{ paymentStatus: string; orderStatus: string }> = {
+                success: true,
+                data: {
+                    paymentStatus: payment.status,
+                    orderStatus: payment.status === 'succeeded' ? 'paid' : order.status,
+                },
+                message,
+            };
+            res.json(response);
+        } catch (error) {
             next(error);
         }
     }
@@ -138,22 +185,21 @@ export class PaymentController {
                 const paymentId = event.object.id;
                 const orderId = event.object.metadata?.orderId;
 
-                if (orderId) {
-                    await OrderModel.updateStatus(orderId, {
-                        status: 'paid',
-                        paymentId,
-                    });
-                    console.log(`Order ${orderId} marked as paid (payment: ${paymentId})`);
-                } else {
-                    // Ищем заказ по paymentId
-                    const order = await OrderModel.findByPaymentId(paymentId);
-                    if (order) {
-                        await OrderModel.updateStatus(order.id, {
-                            status: 'paid',
-                            paymentId,
-                        });
-                        console.log(`Order ${order.id} marked as paid (payment: ${paymentId})`);
+                const order = orderId
+                    ? await OrderModel.findById(orderId)
+                    : await OrderModel.findByPaymentId(paymentId);
+
+                if (order && order.status !== 'paid') {
+                    await OrderModel.updateStatus(order.id, { status: 'paid', paymentId });
+
+                    // Удаляем товар из БД
+                    try {
+                        await ProductModel.delete(order.productId);
+                    } catch {
+                        // Товар мог быть уже удалён
                     }
+
+                    console.log(`Order ${order.id} marked as paid (payment: ${paymentId})`);
                 }
             }
 
@@ -162,29 +208,10 @@ export class PaymentController {
                 const order = await OrderModel.findByPaymentId(paymentId);
                 if (order) {
                     console.log(`Payment canceled for order ${order.id}`);
-                    // Статус остаётся pending_payment — покупатель может попробовать снова
                 }
             }
 
             res.status(200).json({ success: true });
-        } catch (error) {
-            next(error);
-        }
-    }
-
-    /**
-     * GET /api/payments/:paymentId - Получить статус платежа
-     */
-    static async getPaymentStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
-        try {
-            const { paymentId } = req.params as { paymentId: string };
-            const payment = await paymentService.getPayment(paymentId);
-
-            const response: ApiResponse<typeof payment> = {
-                success: true,
-                data: payment,
-            };
-            res.json(response);
         } catch (error) {
             next(error);
         }
