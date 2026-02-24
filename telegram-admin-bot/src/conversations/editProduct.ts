@@ -38,7 +38,6 @@ export function formatProductCard(product: Product): string {
   if (product.discount !== null && product.discount !== undefined) {
     text += `🏷 Скидка: ${product.discount}%\n`;
   }
-  text += `🔒 Бронь: ${product.reserved ? '✅ Забронирован' : '❌ Не забронирован'}\n`;
   return text;
 }
 
@@ -165,17 +164,6 @@ async function handleSale(
   ctx: MyContext,
   product: Product,
 ): Promise<'back' | 'done'> {
-  // Проверяем бронь до отправки запроса
-  if (product.reserved) {
-    await ctx.reply(
-      `🔒 <b>Товар забронирован!</b>\n\n` +
-      `📦 <b>${product.name}</b> уже забронирован другим заказом и не может быть продан.\n\n` +
-      `Если бронь нужно снять — найдите соответствующий заказ и отмените его.`,
-      { parse_mode: 'HTML', reply_markup: productActionKeyboard },
-    );
-    return 'back';
-  }
-
   try {
     // Создаём заказ с оплатой наличными
     const order = await conversation.external(() =>

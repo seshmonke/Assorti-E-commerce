@@ -10,7 +10,6 @@ export interface Product {
   sizes: unknown;
   composition: unknown;
   discount: number | null;
-  reserved: boolean;
   createdAt: string;
   updatedAt: string;
 }

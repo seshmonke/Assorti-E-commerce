@@ -134,17 +134,6 @@ export async function showCartConversation(
         return;
       }
 
-      // Проверяем, нет ли забронированных товаров
-      const reservedItems = currentCart.filter((p) => p.reserved);
-      if (reservedItems.length > 0) {
-        const names = reservedItems.map((p) => `<b>${p.name}</b>`).join(', ');
-        await ctx.reply(
-          `⚠️ Следующие товары уже забронированы и не могут быть включены в заказ:\n${names}\n\nУдалите их из корзины и попробуйте снова.`,
-          { parse_mode: 'HTML', reply_markup: cartMenuKeyboard },
-        );
-        continue;
-      }
-
       const totalPrice = currentCart.reduce((sum, p) => sum + p.price, 0);
 
       try {

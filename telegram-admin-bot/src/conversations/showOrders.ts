@@ -25,17 +25,10 @@ export function formatOrderCard(order: Order): string {
   const paymentLabel = PAYMENT_METHOD_LABELS[order.paymentMethod] ?? order.paymentMethod;
   const productName = order.product?.name ?? order.productId;
   const createdAt = new Date(order.createdAt).toLocaleString('ru-RU');
-  const reservedLabel =
-    order.product !== undefined
-      ? order.product.reserved
-        ? '🔒 Забронирован'
-        : '🟢 Свободен'
-      : '—';
 
   let text = '🧾 <b>Заказ</b>\n\n';
   text += `🆔 ID: <code>${order.id}</code>\n`;
   text += `📦 Товар: <b>${productName}</b>\n`;
-  text += `🏷 Бронь товара: ${reservedLabel}\n`;
   text += `🔢 Количество: ${order.quantity} шт.\n`;
   text += `💰 Сумма: <b>${order.totalPrice} руб.</b>\n`;
   text += `💳 Оплата: ${paymentLabel}\n`;
