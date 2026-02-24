@@ -76,6 +76,11 @@ export async function addProductConversation(
     return;
   }
 
+  if (categories.length === 0) {
+    await ctx.reply('❌ Нет активных категорий, сначала создайте категорию', { reply_markup: mainMenuKeyboard });
+    return;
+  }
+
   const categoryListText = ['Шаг 4/8: Выберите категорию (введите номер):\n', ...categories.map((cat, idx) => `${idx + 1}. ${cat.name}`)].join('\n');
   await ctx.reply(categoryListText, { reply_markup: backKeyboard });
 

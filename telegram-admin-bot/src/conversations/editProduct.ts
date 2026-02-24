@@ -4,6 +4,8 @@ import { apiService } from '../services/apiService';
 import { mainMenuKeyboard, backKeyboard } from '../keyboards/mainMenu';
 import { logger } from '../utils/logger';
 import type { Product, Category } from '../types';
+import { formatOrderCard } from './showOrders';
+import { showOrdersConversation } from './showOrders';
 
 type MyContext = ConversationFlavor<Context>;
 type MyConversation = Conversation<MyContext, MyContext>;
@@ -44,6 +46,8 @@ export const productActionKeyboard = new Keyboard()
   .text('⬅️ Назад').text('🏠 Главное меню')
   .row()
   .text('💰 Продажа').text('✏️ Редактировать товар')
+  .row()
+  .text('📦 Посмотреть заказы')
   .resized();
 
 export const editProductKeyboard = new Keyboard()
@@ -139,6 +143,17 @@ export async function editProductById(
       });
       continue;
     }
+
+    // === ПОСМОТРЕТЬ ЗАКАЗЫ ===
+    if (actionText === '📦 Посмотреть заказы') {
+      const result = await showOrdersConversation(conversation, ctx);
+      // После возврата из меню заказов показываем карточку товара снова
+      await ctx.reply(formatProductCard(product!), {
+        parse_mode: 'HTML',
+        reply_markup: productActionKeyboard,
+      });
+      continue;
+    }
   }
 }
 
@@ -174,16 +189,28 @@ async function handleSale(
     );
     logger.info('Order created via bot (cash)', { orderId: order.id, productId: product.id });
 
-    await ctx.reply(
-      `✅ <b>Заказ создан!</b>\n\n` +
-      `🆔 ID заказа: <code>${order.id}</code>\n` +
-      `📦 Товар: <b>${product.name}</b>\n` +
-      `💰 Сумма: <b>${order.totalPrice} руб.</b>\n` +
-      `💵 Оплата: Наличными\n` +
-      `📊 Статус: ⏳ Ожидает оплаты\n\n` +
-      `Когда клиент оплатит — найдите заказ и отметьте его оплаченным.`,
-      { parse_mode: 'HTML', reply_markup: productActionKeyboard },
-    );
+    // Получаем полную информацию о заказе с привязанным товаром
+    const fullOrder = await conversation.external(() => apiService.getOrderById(order.id));
+
+    if (fullOrder) {
+      // Показываем красивую карточку заказа
+      await ctx.reply(
+        `✅ <b>Заказ создан!</b>\n\n${formatOrderCard(fullOrder)}\n\nКогда клиент оплатит — найдите заказ и отметьте его оплаченным.`,
+        { parse_mode: 'HTML', reply_markup: productActionKeyboard },
+      );
+    } else {
+      // Fallback если не получили полную информацию
+      await ctx.reply(
+        `✅ <b>Заказ создан!</b>\n\n` +
+        `🆔 ID заказа: <code>${order.id}</code>\n` +
+        `📦 Товар: <b>${product.name}</b>\n` +
+        `💰 Сумма: <b>${order.totalPrice} руб.</b>\n` +
+        `💵 Оплата: Наличными\n` +
+        `📊 Статус: ⏳ Ожидает оплаты\n\n` +
+        `Когда клиент оплатит — найдите заказ и отметьте его оплаченным.`,
+        { parse_mode: 'HTML', reply_markup: productActionKeyboard },
+      );
+    }
   } catch (err: any) {
     logger.error('Failed to create order via bot', { err });
     const errorMsg = err?.response?.data?.error ?? err?.message ?? 'неизвестная ошибка';
