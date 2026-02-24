@@ -8,6 +8,8 @@ export const mainMenuKeyboard = new Keyboard()
   .text('📋 Показать товары').text('📋 Показать категории')
   .row()
   .text('📦 Посмотреть заказы').text('🔎 Найти заказ')
+  .row()
+  .text('📁 Посмотреть архив')
   .resized();
 
 export const backKeyboard = new Keyboard()

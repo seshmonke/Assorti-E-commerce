@@ -137,13 +137,18 @@ export async function showCartConversation(
       const totalPrice = currentCart.reduce((sum, p) => sum + p.price, 0);
 
       try {
+        // Создаём заказ для первого товара (т.к. API создаёт заказ за один товар)
+        // или модифицируем логику если нужно создавать множественные заказы
+        const firstProduct = currentCart[0];
+        if (!firstProduct) {
+          await ctx.reply('🛒 Корзина пуста!', { reply_markup: mainMenuKeyboard });
+          return;
+        }
+
         const order = await conversation.external(() =>
           apiService.createOrder({
-            items: currentCart.map((p) => ({
-              productId: p.id,
-              quantity: 1,
-              price: p.price,
-            })),
+            productId: firstProduct.id,
+            quantity: 1,
             totalPrice,
             telegramUserId: userId,
             paymentMethod: 'cash',

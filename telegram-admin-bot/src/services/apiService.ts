@@ -15,6 +15,7 @@ import {
   PaymentResult,
   PaymentCheckResult,
   ApiResponse,
+  Archive,
 } from '../types';
 
 class ApiService {
@@ -265,6 +266,60 @@ class ApiService {
       return response.data.data;
     } catch (error) {
       logger.error('Failed to check payment', { orderId, error });
+      throw error;
+    }
+  }
+
+  // ===== АРХИВ (АРХИВИРОВАННЫЕ ТОВАРЫ) =====
+
+  async getArchivedProducts(): Promise<Product[]> {
+    try {
+      const response = await this.api.get<ApiResponse<Product[]>>('/products/archived');
+      return response.data.data || [];
+    } catch (error) {
+      logger.error('Failed to get archived products', error);
+      throw error;
+    }
+  }
+
+  // ===== АРХИВ (СТАРАЯ ТАБЛИЦА - на случай если ещё используется) =====
+
+  async getAllArchive(): Promise<Archive[]> {
+    try {
+      const response = await this.api.get<ApiResponse<Archive[]>>('/archive');
+      return response.data.data || [];
+    } catch (error) {
+      logger.error('Failed to get archive', error);
+      throw error;
+    }
+  }
+
+  async getArchiveById(id: string): Promise<Archive | null> {
+    try {
+      const response = await this.api.get<ApiResponse<Archive>>(`/archive/${id}`);
+      return response.data.data || null;
+    } catch (error) {
+      logger.error('Failed to get archive item', { id, error });
+      throw error;
+    }
+  }
+
+  async restoreFromArchive(id: string): Promise<Product> {
+    try {
+      const response = await this.api.post<ApiResponse<Product>>(`/archive/${id}/restore`);
+      if (!response.data.data) throw new Error('No data returned from server');
+      return response.data.data;
+    } catch (error) {
+      logger.error('Failed to restore from archive', { id, error });
+      throw error;
+    }
+  }
+
+  async deleteArchive(id: string): Promise<void> {
+    try {
+      await this.api.delete(`/archive/${id}`);
+    } catch (error) {
+      logger.error('Failed to delete archive item', { id, error });
       throw error;
     }
   }

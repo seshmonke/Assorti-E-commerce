@@ -3,25 +3,26 @@ import { type Context, Keyboard } from 'grammy';
 import { apiService } from '../services/apiService';
 import { mainMenuKeyboard, backKeyboard } from '../keyboards/mainMenu';
 import { logger } from '../utils/logger';
-import type { Archive } from '../types';
+import type { Product } from '../types';
 
 type MyContext = ConversationFlavor<Context>;
 type MyConversation = Conversation<MyContext, MyContext>;
 
-function formatArchiveList(items: Archive[]): string {
+function formatArchiveList(items: Product[]): string {
   if (items.length === 0) return '📭 Архив пуст.';
 
   const lines = items.map((item, idx) => {
     const sizes = Array.isArray(item.sizes)
       ? (item.sizes as string[]).join(', ')
       : String(item.sizes ?? '—');
-    return `${idx + 1}. ${item.name} | ${sizes} | ${item.categoryName} | ${item.price} руб. | ID: ${item.id}`;
+    const categoryName = item.category?.name ?? '—';
+    return `${idx + 1}. ${item.name} | ${sizes} | ${categoryName} | ${item.price} руб. | ID: ${item.id}`;
   });
 
   return `📁 <b>Архив (${items.length} товаров)</b>\n\n<code>${lines.join('\n')}</code>`;
 }
 
-function formatArchiveCard(item: Archive): string {
+function formatArchiveCard(item: Product): string {
   const sizes = Array.isArray(item.sizes)
     ? (item.sizes as string[]).join(', ')
     : String(item.sizes ?? '—');
@@ -35,12 +36,14 @@ function formatArchiveCard(item: Archive): string {
           .join(', ')
       : String(item.composition ?? '—');
 
+  const categoryName = item.category?.name ?? '—';
+
   let text = '📁 <b>Архивный товар</b>\n\n';
   text += `🆔 ID: <code>${item.id}</code>\n`;
   text += `📝 Название: <b>${item.name}</b>\n`;
   text += `💰 Цена: <b>${item.price} руб.</b>\n`;
   text += `🖼 Картинка: ${item.image}\n`;
-  text += `📂 Категория: ${item.categoryName}\n`;
+  text += `📂 Категория: ${categoryName}\n`;
   text += `📄 Описание: ${item.description}\n`;
   text += `📏 Размеры: ${sizes}\n`;
   text += `🧵 Состав: ${composition}\n`;
@@ -53,16 +56,16 @@ function formatArchiveCard(item: Archive): string {
 const archiveItemKeyboard = new Keyboard()
   .text('⬅️ Назад').text('🏠 Главное меню')
   .row()
-  .text('♻️ Вернуть товар в ассортимент')
+  .text('♻️ Разархивировать товар')
   .resized();
 
 export async function showArchiveConversation(
   conversation: MyConversation,
   ctx: MyContext,
 ): Promise<void> {
-  let items: Archive[] = [];
+  let items: Product[] = [];
   try {
-    items = await conversation.external(() => apiService.getAllArchive());
+    items = await conversation.external(() => apiService.getArchivedProducts());
   } catch {
     await ctx.reply('⚠️ Не удалось загрузить архив.', { reply_markup: mainMenuKeyboard });
     return;
@@ -91,7 +94,7 @@ export async function showArchiveConversation(
     }
 
     // Определяем товар по номеру или ID
-    let selectedItem: Archive | null = null;
+    let selectedItem: Product | null = null;
     const num = parseInt(text, 10);
 
     if (!isNaN(num) && num >= 1 && num <= items.length) {
@@ -100,7 +103,7 @@ export async function showArchiveConversation(
       selectedItem = items.find((i) => i.id === text) ?? null;
       if (!selectedItem) {
         try {
-          selectedItem = await conversation.external(() => apiService.getArchiveById(text));
+          selectedItem = await conversation.external(() => apiService.getProductById(text));
         } catch {
           selectedItem = null;
         }
@@ -132,7 +135,7 @@ export async function showArchiveConversation(
       if (actionText === '⬅️ Назад') {
         // Перезагружаем список архива
         try {
-          items = await conversation.external(() => apiService.getAllArchive());
+          items = await conversation.external(() => apiService.getArchivedProducts());
         } catch {
           items = [];
         }
@@ -153,29 +156,28 @@ export async function showArchiveConversation(
         return;
       }
 
-      // === ВЕРНУТЬ В АССОРТИМЕНТ ===
-      if (actionText === '♻️ Вернуть товар в ассортимент') {
+      // === РАЗАРХИВИРОВАТЬ ТОВАР ===
+      if (actionText === '♻️ Разархивировать товар') {
         try {
-          const restoredProduct = await conversation.external(() =>
-            apiService.restoreFromArchive(currentItem.id),
+          const unarchived = await conversation.external(() =>
+            apiService.updateProduct(currentItem.id, { archive: false }),
           );
-          logger.info('Product restored from archive', {
-            archiveId: currentItem.id,
-            productId: restoredProduct.id,
+          logger.info('Product unarchived', {
+            productId: currentItem.id,
           });
 
           await ctx.reply(
-            `✅ <b>Товар возвращён в ассортимент!</b>\n\n` +
-            `📦 <b>${currentItem.name}</b> добавлен обратно в каталог.\n` +
-            `🆔 Новый ID товара: <code>${restoredProduct.id}</code>`,
+            `✅ <b>Товар разархивирован!</b>\n\n` +
+            `📦 <b>${currentItem.name}</b> вернулся в ассортимент.\n` +
+            `🆔 ID товара: <code>${unarchived.id}</code>`,
             { parse_mode: 'HTML', reply_markup: mainMenuKeyboard },
           );
           return;
         } catch (err: any) {
-          logger.error('Failed to restore from archive', { err });
+          logger.error('Failed to unarchive product', { err });
           const errorMsg = err?.response?.data?.error ?? err?.message ?? 'неизвестная ошибка';
           await ctx.reply(
-            `⚠️ Ошибка при восстановлении товара: ${errorMsg}`,
+            `⚠️ Ошибка при разархивировании товара: ${errorMsg}`,
             { reply_markup: archiveItemKeyboard },
           );
           continue;

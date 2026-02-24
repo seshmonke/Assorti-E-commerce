@@ -10,6 +10,7 @@ export interface Product {
   sizes: unknown;
   composition: unknown;
   discount: number | null;
+  archive: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -34,6 +35,7 @@ export interface UpdateProductData {
   sizes?: unknown;
   composition?: unknown;
   discount?: number;
+  archive?: boolean;
 }
 
 // Типы для категорий
@@ -103,6 +105,34 @@ export interface PaymentResult {
 export interface PaymentCheckResult {
   paymentStatus: string;
   orderStatus: string;
+}
+
+// Типы для архива
+export interface Archive {
+  id: string;
+  name: string;
+  price: number;
+  image: string;
+  categoryId: string;
+  category?: Category;
+  categoryName?: string;
+  description: string;
+  sizes: unknown;
+  composition: unknown;
+  discount: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateArchiveData {
+  name: string;
+  price: number;
+  image: string;
+  categoryId: string;
+  description: string;
+  sizes: unknown;
+  composition: unknown;
+  discount?: number;
 }
 
 // Ответ API
