@@ -4,6 +4,7 @@ import productRoutes from './routes/productRoutes.js';
 import categoryRoutes from './routes/categoryRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
+import archiveRoutes from './routes/archiveRoutes.js';
 import { logger } from './middleware/logger.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
@@ -27,6 +28,7 @@ export function buildApp() {
     app.use('/api/categories', categoryRoutes);
     app.use('/api/orders', orderRoutes);
     app.use('/api/payments', paymentRoutes);
+    app.use('/api/archive', archiveRoutes);
 
     // Health check
     app.get('/health', (_req, res) => {

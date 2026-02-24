@@ -107,6 +107,22 @@ export class ProductController {
     }
 
     /**
+     * GET /api/products/archived - Получить архивированные товары
+     */
+    static async getArchivedProducts(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const products = await ProductModel.findAllArchived();
+            const response: ApiResponse<typeof products> = {
+                success: true,
+                data: products,
+            };
+            res.json(response);
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
      * POST /api/products - Создать новый продукт (требует аутентификации)
      */
     static async createProduct(req: Request, res: Response, next: NextFunction): Promise<void> {

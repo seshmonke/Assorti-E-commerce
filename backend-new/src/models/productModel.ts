@@ -4,60 +4,92 @@ import type { CreateProductDTO, UpdateProductDTO, IProduct } from '../types/inde
 
 export class ProductModel {
     /**
-     * Получить все продукты
+     * Получить все активные продукты (не архивированные)
      */
     static async findAll(): Promise<IProduct[]> {
         return prisma.product.findMany({
+            where: { archive: false },
             include: { category: true },
-        });
+        }) as unknown as IProduct[];
     }
 
     /**
-     * Получить продукт по ID
+     * Получить все продукты (включая архивированные)
+     */
+    static async findAllIncludingArchived(): Promise<IProduct[]> {
+        return prisma.product.findMany({
+            include: { category: true },
+        }) as unknown as IProduct[];
+    }
+
+    /**
+     * Получить все архивированные продукты
+     */
+    static async findAllArchived(): Promise<IProduct[]> {
+        return prisma.product.findMany({
+            where: { archive: true },
+            include: { category: true },
+        }) as unknown as IProduct[];
+    }
+
+    /**
+     * Получить активный продукт по ID
      */
     static async findById(id: string): Promise<IProduct | null> {
         return prisma.product.findUnique({
             where: { id },
             include: { category: true },
-        });
+        }) as unknown as IProduct | null;
     }
 
     /**
-     * Получить продукты по категории ID
+     * Получить продукт по ID (включая архивированные)
+     */
+    static async findByIdIncludingArchived(id: string): Promise<IProduct | null> {
+        return prisma.product.findUnique({
+            where: { id },
+            include: { category: true },
+        }) as unknown as IProduct | null;
+    }
+
+    /**
+     * Получить активные продукты по категории ID
      */
     static async findByCategory(categoryId: string): Promise<IProduct[]> {
         return prisma.product.findMany({
-            where: { categoryId },
+            where: { categoryId, archive: false },
             include: { category: true },
-        });
+        }) as unknown as IProduct[];
     }
 
     /**
-     * Получить товары со скидкой (discount > 0)
+     * Получить активные товары со скидкой (discount > 0)
      */
     static async findOnSale(): Promise<IProduct[]> {
         return prisma.product.findMany({
             where: {
                 discount: { gt: 0 },
+                archive: false,
             },
             include: { category: true },
-        });
+        }) as unknown as IProduct[];
     }
 
     /**
      * Создать новый продукт
      */
     static async create(data: CreateProductDTO): Promise<IProduct> {
-        const { categoryId, sizes, composition, ...rest } = data;
+        const { categoryId, sizes, composition, archive, ...rest } = data;
         return prisma.product.create({
             data: {
                 ...rest,
                 sizes: sizes as Prisma.InputJsonValue,
                 composition: composition as Prisma.InputJsonValue,
+                archive: archive ?? false,
                 category: { connect: { id: categoryId } },
             },
             include: { category: true },
-        });
+        }) as unknown as IProduct;
     }
 
     /**
@@ -74,7 +106,29 @@ export class ProductModel {
                 ...(categoryId ? { category: { connect: { id: categoryId } } } : {}),
             },
             include: { category: true },
-        });
+        }) as unknown as IProduct;
+    }
+
+    /**
+     * Архивировать продукт
+     */
+    static async archive(id: string): Promise<IProduct> {
+        return prisma.product.update({
+            where: { id },
+            data: { archive: true },
+            include: { category: true },
+        }) as unknown as IProduct;
+    }
+
+    /**
+     * Разархивировать продукт
+     */
+    static async unarchive(id: string): Promise<IProduct> {
+        return prisma.product.update({
+            where: { id },
+            data: { archive: false },
+            include: { category: true },
+        }) as unknown as IProduct;
     }
 
     /**
@@ -84,11 +138,11 @@ export class ProductModel {
         return prisma.product.delete({
             where: { id },
             include: { category: true },
-        });
+        }) as unknown as IProduct;
     }
 
     /**
-     * Поиск продуктов по названию
+     * Поиск активных продуктов по названию
      */
     static async search(query: string): Promise<IProduct[]> {
         return prisma.product.findMany({
@@ -96,9 +150,10 @@ export class ProductModel {
                 name: {
                     contains: query,
                 },
+                archive: false,
             },
             include: { category: true },
-        });
+        }) as unknown as IProduct[];
     }
 
 }

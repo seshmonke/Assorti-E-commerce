@@ -54,10 +54,10 @@ export class ArchiveController {
         try {
             const data: CreateArchiveDTO = req.body;
 
-            if (!data.name || !data.price || !data.categoryId || !data.categoryName) {
+            if (!data.name || !data.price || !data.categoryId) {
                 res.status(400).json({
                     success: false,
-                    error: 'Missing required fields: name, price, categoryId, categoryName',
+                    error: 'Missing required fields: name, price, categoryId',
                 });
                 return;
             }

@@ -9,6 +9,7 @@ export interface IProduct {
     sizes: unknown;
     composition: unknown;
     discount: number | null;
+    archive: boolean;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -22,6 +23,7 @@ export interface CreateProductDTO {
     sizes: unknown;
     composition: unknown;
     discount?: number;
+    archive?: boolean;
 }
 
 export interface UpdateProductDTO {
@@ -33,6 +35,7 @@ export interface UpdateProductDTO {
     sizes?: unknown;
     composition?: unknown;
     discount?: number;
+    archive?: boolean;
 }
 
 export interface ICategory {
@@ -99,7 +102,7 @@ export interface IArchive {
     price: number;
     image: string;
     categoryId: string;
-    categoryName: string;
+    category?: ICategory;
     description: string;
     sizes: unknown;
     composition: unknown;
@@ -113,7 +116,6 @@ export interface CreateArchiveDTO {
     price: number;
     image: string;
     categoryId: string;
-    categoryName: string;
     description: string;
     sizes: unknown;
     composition: unknown;

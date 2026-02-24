@@ -57,7 +57,7 @@ export class OrderController {
 
     /**
      * POST /api/orders - Создать новый заказ
-     * При создании атомарно бронируем товар и создаём заказ
+     * При создании атомарно помечаем товар как архивный (archive: true)
      */
     static async createOrder(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
@@ -72,7 +72,7 @@ export class OrderController {
             }
 
             // Проверяем существование товара
-            const product = await ProductModel.findById(data.productId);
+            const product = await ProductModel.findByIdIncludingArchived(data.productId);
             if (!product) {
                 res.status(404).json({
                     success: false,
@@ -81,13 +81,43 @@ export class OrderController {
                 return;
             }
 
-            // Создаём заказ
-            const order = await OrderModel.create(data);
+            // Проверяем, не находится ли товар уже в архиве
+            if (product.archive) {
+                res.status(400).json({
+                    success: false,
+                    error: 'Cannot create order for archived product',
+                });
+                return;
+            }
+
+            // Атомарно: создаём заказ и помечаем товар как архивный
+            const order = await prisma.$transaction(async (tx) => {
+                // Создаём заказ
+                const newOrder = await tx.order.create({
+                    data: {
+                        productId: data.productId,
+                        quantity: data.quantity ?? 1,
+                        totalPrice: data.totalPrice,
+                        telegramUserId: data.telegramUserId ?? null,
+                        paymentMethod: data.paymentMethod ?? 'card',
+                        status: 'pending_payment',
+                    },
+                    include: { product: { include: { category: true } } },
+                });
+
+                // Помечаем товар как архивный
+                await tx.product.update({
+                    where: { id: data.productId },
+                    data: { archive: true },
+                });
+
+                return newOrder;
+            });
 
             res.status(201).json({
                 success: true,
                 data: order,
-                message: 'Order created successfully',
+                message: 'Order created successfully and product moved to archive',
             });
         } catch (error) {
             next(error);
@@ -96,8 +126,7 @@ export class OrderController {
 
     /**
      * PUT /api/orders/:id/status - Обновить статус заказа
-     * При переходе в "paid" — удаляем товар из БД
-     * При переходе в "cancelled" — снимаем бронь атомарно
+     * Товар уже перемещён в архив при создании заказа
      */
     static async updateOrderStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
@@ -135,15 +164,6 @@ export class OrderController {
             }
 
             const order = await OrderModel.updateStatus(id, data);
-
-            // Если заказ оплачен — удаляем товар из БД (продан)
-            if (data.status === 'paid') {
-                try {
-                    await ProductModel.delete(existingOrder.productId);
-                } catch {
-                    // Товар мог быть уже удалён — не критично
-                }
-            }
 
             const response: ApiResponse<typeof order> = {
                 success: true,
