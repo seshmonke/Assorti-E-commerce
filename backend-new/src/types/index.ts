@@ -9,7 +9,6 @@ export interface IProduct {
     sizes: unknown;
     composition: unknown;
     discount: number | null;
-    reserved: boolean;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -92,6 +91,33 @@ export interface UpdateOrderStatusDTO {
 export interface AuthPayload {
     userId?: string;
     role?: string;
+}
+
+export interface IArchive {
+    id: string;
+    name: string;
+    price: number;
+    image: string;
+    categoryId: string;
+    categoryName: string;
+    description: string;
+    sizes: unknown;
+    composition: unknown;
+    discount: number | null;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export interface CreateArchiveDTO {
+    name: string;
+    price: number;
+    image: string;
+    categoryId: string;
+    categoryName: string;
+    description: string;
+    sizes: unknown;
+    composition: unknown;
+    discount?: number;
 }
 
 export interface ApiResponse<T> {

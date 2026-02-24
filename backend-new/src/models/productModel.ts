@@ -101,14 +101,4 @@ export class ProductModel {
         });
     }
 
-    /**
-     * Установить/снять бронь товара
-     */
-    static async setReserved(id: string, reserved: boolean): Promise<IProduct> {
-        return prisma.product.update({
-            where: { id },
-            data: { reserved },
-            include: { category: true },
-        });
-    }
 }

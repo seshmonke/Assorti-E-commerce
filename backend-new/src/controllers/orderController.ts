@@ -71,7 +71,7 @@ export class OrderController {
                 return;
             }
 
-            // Проверяем существование товара и его доступность
+            // Проверяем существование товара
             const product = await ProductModel.findById(data.productId);
             if (!product) {
                 res.status(404).json({
@@ -81,32 +81,8 @@ export class OrderController {
                 return;
             }
 
-            if (product.reserved) {
-                res.status(409).json({
-                    success: false,
-                    error: 'Product is already reserved by another order',
-                });
-                return;
-            }
-
-            // Атомарно: бронируем товар и создаём заказ
-            const order = await prisma.$transaction(async (tx) => {
-                await tx.product.update({
-                    where: { id: data.productId },
-                    data: { reserved: true },
-                });
-                return tx.order.create({
-                    data: {
-                        productId: data.productId,
-                        quantity: data.quantity ?? 1,
-                        totalPrice: data.totalPrice,
-                        telegramUserId: data.telegramUserId ?? null,
-                        paymentMethod: data.paymentMethod ?? 'card',
-                        status: 'pending_payment',
-                    },
-                    include: { product: { include: { category: true } } },
-                });
-            });
+            // Создаём заказ
+            const order = await OrderModel.create(data);
 
             res.status(201).json({
                 success: true,
@@ -146,25 +122,9 @@ export class OrderController {
                 return;
             }
 
-            // Если заказ отменён — атомарно снимаем бронь и меняем статус
+            // Если заказ отменён — просто обновляем статус
             if (data.status === 'cancelled') {
-                const order = await prisma.$transaction(async (tx) => {
-                    await tx.product.update({
-                        where: { id: existingOrder.productId },
-                        data: { reserved: false },
-                    }).catch(() => { /* товар мог быть уже удалён */ });
-
-                    return tx.order.update({
-                        where: { id },
-                        data: {
-                            status: data.status,
-                            ...(data.paymentId !== undefined ? { paymentId: data.paymentId } : {}),
-                            ...(data.confirmationUrl !== undefined ? { confirmationUrl: data.confirmationUrl } : {}),
-                        },
-                        include: { product: { include: { category: true } } },
-                    });
-                });
-
+                const order = await OrderModel.updateStatus(id, data);
                 const response: ApiResponse<typeof order> = {
                     success: true,
                     data: order,
@@ -229,19 +189,8 @@ export class OrderController {
                 return;
             }
 
-            // Атомарно: снимаем бронь с товара и обновляем статус заказа
-            const order = await prisma.$transaction(async (tx) => {
-                await tx.product.update({
-                    where: { id: existingOrder.productId },
-                    data: { reserved: false },
-                }).catch(() => { /* товар мог быть уже удалён */ });
-
-                return tx.order.update({
-                    where: { id },
-                    data: { status: 'cancelled' },
-                    include: { product: { include: { category: true } } },
-                });
-            });
+            // Обновляем статус заказа на cancelled
+            const order = await OrderModel.updateStatus(id, { status: 'cancelled' });
 
             const response: ApiResponse<typeof order> = {
                 success: true,
@@ -271,14 +220,6 @@ export class OrderController {
                 return;
             }
 
-            // Снимаем бронь если заказ ещё не завершён
-            if (existingOrder.status === 'pending_payment') {
-                try {
-                    await ProductModel.setReserved(existingOrder.productId, false);
-                } catch {
-                    // Товар мог быть уже удалён — не критично
-                }
-            }
 
             const order = await OrderModel.delete(id);
 
