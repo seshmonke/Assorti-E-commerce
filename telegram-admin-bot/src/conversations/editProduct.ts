@@ -25,10 +25,16 @@ export function formatProductCard(product: Product): string {
       : String(product.composition ?? '—');
 
   const categoryDisplay = product.category?.name ?? product.categoryId;
+  
+  // Префикс для архивированного товара
+  const namePrefix = product.archive ? '[АРХИВ] ' : '';
+  
+  // Статус архива
+  const archiveStatus = product.archive ? '✅ В архиве' : '❌ Активен';
 
   let text = '📦 <b>Карточка товара</b>\n\n';
   text += `🆔 ID: <code>${product.id}</code>\n`;
-  text += `📝 Название: <b>${product.name}</b>\n`;
+  text += `📝 Название: <b>${namePrefix}${product.name}</b>\n`;
   text += `💰 Цена: <b>${product.price} руб.</b>\n`;
   text += `🖼 Картинка: ${product.image}\n`;
   text += `📂 Категория: ${categoryDisplay}\n`;
@@ -38,6 +44,7 @@ export function formatProductCard(product: Product): string {
   if (product.discount !== null && product.discount !== undefined) {
     text += `🏷 Скидка: ${product.discount}%\n`;
   }
+  text += `🗂 Архив: ${archiveStatus}\n`;
   return text;
 }
 

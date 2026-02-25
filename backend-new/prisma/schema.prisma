@@ -30,7 +30,7 @@ model Product {
 model Order {
   id              String   @id @default(uuid())
   productId       String
-  product         Product  @relation(fields: [productId], references: [id])
+  product         Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   quantity        Int      @default(1)
   totalPrice      Int
   status          String   @default("pending_payment")
@@ -42,28 +42,12 @@ model Order {
   updatedAt       DateTime @updatedAt
 }
 
-model Archive {
-  id            String   @id @default(uuid())
-  name          String
-  price         Int
-  image         String
-  categoryId    String
-  category      Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  description   String
-  sizes         Json
-  composition   Json
-  discount      Int?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-}
-
 model Category {
   id        String    @id @default(uuid())
   name      String
   section   String    // "clothing" | "accessories"
   order     Int
   products  Product[]
-  archives  Archive[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 }

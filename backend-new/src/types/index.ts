@@ -96,32 +96,6 @@ export interface AuthPayload {
     role?: string;
 }
 
-export interface IArchive {
-    id: string;
-    name: string;
-    price: number;
-    image: string;
-    categoryId: string;
-    category?: ICategory;
-    description: string;
-    sizes: unknown;
-    composition: unknown;
-    discount: number | null;
-    createdAt: Date;
-    updatedAt: Date;
-}
-
-export interface CreateArchiveDTO {
-    name: string;
-    price: number;
-    image: string;
-    categoryId: string;
-    description: string;
-    sizes: unknown;
-    composition: unknown;
-    discount?: number;
-}
-
 export interface ApiResponse<T> {
     success: boolean;
     data?: T;
