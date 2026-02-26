@@ -1,75 +1,71 @@
 import type { Request, Response, NextFunction } from 'express';
+import { verifyAccessToken } from '../services/authService.js';
+import { logAuthDenied } from '../utils/authLogger.js';
 
 declare global {
     namespace Express {
         interface Request {
             user?: {
-                userId?: string;
-                role?: string;
+                userId: string;
+                telegramId: string;
             };
         }
     }
 }
 
 /**
- * Middleware для проверки JWT токена
- * Ожидает токен в заголовке Authorization: Bearer <token>
+ * Middleware для проверки JWT токена из cookies
+ * Проверяет accessToken из httpOnly cookies или заголовка Authorization: Bearer <token>
  */
 export function authMiddleware(req: Request, res: Response, next: NextFunction): void {
     try {
-        const authHeader = req.headers.authorization;
+        let token: string | null = null;
 
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            res.status(401).json({
-                success: false,
-                error: 'Missing or invalid authorization header',
-            });
-            return;
+        // Сначала проверяем cookies
+        if (req.cookies?.accessToken) {
+            token = req.cookies.accessToken;
         }
 
-        const token = authHeader.substring(7);
+        // Затем проверяем Authorization header (для совместимости)
+        if (!token && req.headers.authorization?.startsWith('Bearer ')) {
+            token = req.headers.authorization.substring(7);
+        }
 
-        // Простая проверка токена (в реальном приложении используй jwt.verify)
-        // Для демонстрации просто проверяем наличие токена
         if (!token) {
+            logAuthDenied('Missing authentication token', req.path, req.method, req);
             res.status(401).json({
                 success: false,
-                error: 'Invalid token',
+                error: 'Missing authentication token',
             });
             return;
         }
 
-        // TODO: Добавить реальную проверку JWT токена
-        // const decoded = jwt.verify(token, config.jwtSecret);
-        // req.user = decoded;
+        // Верифицируем токен
+        const verification = verifyAccessToken(token);
 
-        // Для демонстрации просто устанавливаем пользователя
+        if (!verification.valid || !verification.payload) {
+            logAuthDenied(verification.error || 'Invalid or expired token', req.path, req.method, req);
+            res.status(401).json({
+                success: false,
+                error: 'Invalid or expired token',
+            });
+            return;
+        }
+
+        // Устанавливаем пользователя в request
         req.user = {
-            userId: 'demo-user',
-            role: 'admin',
+            userId: verification.payload.userId as string,
+            telegramId: verification.payload.telegramId as string,
         };
 
         next();
-    } catch {
+    } catch (error) {
+        const message = error instanceof Error ? error.message : 'Authentication failed';
+        logAuthDenied(message, req.path, req.method, req);
         res.status(401).json({
             success: false,
-            error: 'Authentication failed',
+            error: message,
         });
     }
 }
 
-/**
- * Middleware для проверки роли пользователя
- */
-export function requireRole(role: string) {
-    return (req: Request, res: Response, next: NextFunction): void => {
-        if (!req.user || req.user.role !== role) {
-            res.status(403).json({
-                success: false,
-                error: 'Insufficient permissions',
-            });
-            return;
-        }
-        next();
-    };
-}

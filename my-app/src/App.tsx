@@ -4,6 +4,7 @@ import { Routes, Route, Link } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from './store/hooks'
 import { loadFromLocalStorage } from './store/cartSlice'
 import { loadCategories } from './store/categorySlice'
+import { signIn } from './store/authSlice'
 import { HomePage } from './pages/HomePage'
 import { CategoryPage } from './pages/CategoryPage'
 import { CartPage } from './pages/CartPage'
@@ -15,6 +16,8 @@ function App() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const cartItemsCount = useAppSelector((state) => state.cart.items.length);
   const categories = useAppSelector((state) => state.categories.items);
+  const isAuthorized = useAppSelector((state) => state.auth.isAuthorized);
+  const authError = useAppSelector((state) => state.auth.error);
 
   const clothingCategories = categories
     .filter((c) => c.section === 'clothing')
@@ -27,6 +30,23 @@ function App() {
   useEffect(() => {
     dispatch(loadFromLocalStorage());
     dispatch(loadCategories());
+
+    // Авторизация через Telegram Mini App
+    const tg = (window as any).Telegram?.WebApp;
+    if (tg) {
+      tg.ready();
+
+      // Получаем initData из Telegram Web App
+      const initData = tg.initData;
+
+      if (initData) {
+        dispatch(signIn(initData));
+      } else {
+        console.warn('Telegram initData not available');
+      }
+    } else {
+      console.warn('Telegram Web App SDK not available');
+    }
   }, [dispatch]);
 
   return (
@@ -87,21 +107,32 @@ function App() {
             </ul>
           </div>
 
-          <button
-            className="btn btn-light ms-auto position-relative"
-            onClick={() => setIsCartOpen(true)}
-            style={{ marginRight: '10px' }}
-          >
-            🛒 Корзина
-            {cartItemsCount > 0 && (
-              <span
-                className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark"
-                style={{ transform: 'translate(-50%, -50%)' }}
-              >
-                {cartItemsCount}
+          <div className="d-flex gap-3 ms-auto" style={{ alignItems: 'center' }}>
+            {authError && (
+              <div className="alert alert-warning m-0" style={{ fontSize: '0.9rem' }}>
+                ⚠️ {authError}
+              </div>
+            )}
+            {isAuthorized && (
+              <span className="text-light" style={{ fontSize: '0.9rem' }}>
+                ✅ Авторизован
               </span>
             )}
-          </button>
+            <button
+              className="btn btn-light position-relative"
+              onClick={() => setIsCartOpen(true)}
+            >
+              🛒 Корзина
+              {cartItemsCount > 0 && (
+                <span
+                  className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark"
+                  style={{ transform: 'translate(-50%, -50%)' }}
+                >
+                  {cartItemsCount}
+                </span>
+              )}
+            </button>
+          </div>
         </div>
       </nav>
 

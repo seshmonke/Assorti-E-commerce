@@ -91,9 +91,26 @@ export interface UpdateOrderStatusDTO {
     confirmationUrl?: string;
 }
 
+export interface IUser {
+    id: string;
+    telegramId: string;
+    username?: string | null;
+    firstName?: string | null;
+    lastName?: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export interface CreateUserDTO {
+    telegramId: string;
+    username?: string;
+    firstName?: string;
+    lastName?: string;
+}
+
 export interface AuthPayload {
-    userId?: string;
-    role?: string;
+    userId: string;
+    telegramId: string;
 }
 
 export interface ApiResponse<T> {
