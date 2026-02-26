@@ -20,6 +20,16 @@ export const bot = new Bot<MyContext>(env.BOT_API_KEY);
 // Middleware
 bot.use(loggingMiddleware);
 
+// Middleware авторизации — только администратор может использовать бота
+bot.use(async (ctx, next) => {
+  const userId = ctx.from?.id?.toString();
+  if (userId !== env.ADMIN_USER_ID) {
+    await ctx.reply('❌ У вас нет доступа к этому боту.');
+    return;
+  }
+  await next();
+});
+
 // Подключаем conversations plugin
 bot.use(conversations());
 
