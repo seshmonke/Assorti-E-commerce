@@ -14,7 +14,7 @@ export function buildApp() {
 
     // Middleware
     app.use(cors({
-        origin: process.env.CORS_ORIGIN?.split(',') ?? [
+        origin: process.env.CORS_ORIGIN?.split(',').map(o => o.trim()) ?? [
             'http://localhost:5173',
             'http://127.0.0.1:5173',
         ],
@@ -34,7 +34,7 @@ export function buildApp() {
     app.use('/api/payments', paymentRoutes);
 
     // Health check
-    app.get('/health', (_req, res) => {
+    app.get('/api/health', (_req, res) => {
         res.json({ status: 'OK' });
     });
 
