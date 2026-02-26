@@ -40,7 +40,19 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction):
             return;
         }
 
-        // Верифицируем токен
+        // Проверяем статичный API_SECRET_TOKEN для бота
+        const apiSecretToken = process.env.API_SECRET_TOKEN;
+        if (apiSecretToken && token === apiSecretToken) {
+            // Для бота устанавливаем специальный пользователь
+            req.user = {
+                userId: 'bot',
+                telegramId: 'bot',
+            };
+            next();
+            return;
+        }
+
+        // Верифицируем JWT токен
         const verification = verifyAccessToken(token);
 
         if (!verification.valid || !verification.payload) {

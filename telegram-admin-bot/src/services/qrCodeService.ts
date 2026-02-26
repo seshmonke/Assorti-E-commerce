@@ -15,7 +15,7 @@ class QRCodeService {
         width: 300,
         ...options,
       });
-      return qrCodeDataUrl;
+      return qrCodeDataUrl as unknown as string;
     } catch (error) {
       logger.error('Failed to generate QR code data URL', { data, error });
       throw error;
@@ -104,7 +104,7 @@ class QRCodeService {
       return {
         productId: parts[1],
         productName: parts.slice(2).join(':'),
-      };
+      } as { productId: string; productName: string };
     } catch (error) {
       logger.error('Failed to parse product QR code', { qrData, error });
       return null;

@@ -20,10 +20,11 @@ export const bot = new Bot<MyContext>(env.BOT_API_KEY);
 // Middleware
 bot.use(loggingMiddleware);
 
-// Middleware авторизации — только администратор может использовать бота
+// Middleware авторизации — только разрешённые пользователи могут использовать бота
 bot.use(async (ctx, next) => {
   const userId = ctx.from?.id?.toString();
-  if (userId !== env.ADMIN_USER_ID) {
+  const allowedIds = env.ALLOWED_USER_IDS.split(',').map(id => id.trim());
+  if (!userId || !allowedIds.includes(userId)) {
     await ctx.reply('❌ У вас нет доступа к этому боту.');
     return;
   }

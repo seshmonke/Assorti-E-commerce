@@ -2,12 +2,13 @@
   "name": "telegram-admin-bot",
   "version": "1.0.0",
   "description": "Telegram бот для управления товарами с QR-кодами",
-  "type": "module",
+  "type": "commonjs",
   "main": "dist/main.js",
   "scripts": {
     "dev": "tsx watch src/main.ts",
-    "build": "tsc",
+    "build": "rm -rf dist && tsc",
     "start": "node dist/main.js",
+    "pm2": "npm run build && pm2 restart main --update-env",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },

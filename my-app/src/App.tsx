@@ -17,7 +17,6 @@ function App() {
   const cartItemsCount = useAppSelector((state) => state.cart.items.length);
   const categories = useAppSelector((state) => state.categories.items);
   const isAuthorized = useAppSelector((state) => state.auth.isAuthorized);
-  const authError = useAppSelector((state) => state.auth.error);
 
   const clothingCategories = categories
     .filter((c) => c.section === 'clothing')
@@ -108,11 +107,6 @@ function App() {
           </div>
 
           <div className="d-flex gap-3 ms-auto" style={{ alignItems: 'center' }}>
-            {authError && (
-              <div className="alert alert-warning m-0" style={{ fontSize: '0.9rem' }}>
-                ⚠️ {authError}
-              </div>
-            )}
             {isAuthorized && (
               <span className="text-light" style={{ fontSize: '0.9rem' }}>
                 ✅ Авторизован
