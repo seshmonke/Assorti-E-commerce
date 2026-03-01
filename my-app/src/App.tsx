@@ -18,7 +18,6 @@ function App() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const cartItemsCount = useAppSelector((state) => state.cart.items.length);
   const categories = useAppSelector((state) => state.categories.items);
-  const isAuthorized = useAppSelector((state) => state.auth.isAuthorized);
 
   const clothingCategories = categories
     .filter((c) => c.section === 'clothing')
@@ -139,11 +138,6 @@ function App() {
           </div>
 
           <div className="d-flex gap-3 ms-auto" style={{ alignItems: 'center' }}>
-            {isAuthorized && (
-              <span className="text-light" style={{ fontSize: '0.9rem' }}>
-                ✅ Авторизован
-              </span>
-            )}
             <Link to="/profile" className="btn btn-light">
               👤 Профиль
             </Link>

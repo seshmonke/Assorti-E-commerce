@@ -1,4 +1,4 @@
-.PHONY: dev dev-frontend dev-backend dev-bot install
+.PHONY: dev dev-frontend dev-backend dev-bot install deploy-frontend
 
 ## Запуск всех сервисов параллельно
 dev:
@@ -13,6 +13,12 @@ dev-backend:
 
 dev-bot:
 	cd telegram-admin-bot && npm run dev
+
+## Сборка и деплой фронтенда на продакшн
+deploy-frontend:
+	cd my-app && npm run build
+	cp -r my-app/dist/. /var/www/my-app/
+	@echo "✅ Фронтенд задеплоен в /var/www/my-app/"
 
 ## Установка зависимостей во всех проектах
 install:

@@ -9,8 +9,8 @@ const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'your-super-secret-
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
 /**
  * Валидирует initData от Telegram Mini App
- * Проверяет подпись (HMAC-SHA256). Проверка времени отключена (expiresIn: 0),
- * так как Telegram кэширует initData и auth_date может быть старше 24 часов.
+ * Проверяет подпись (HMAC-SHA256) и время: initData считается валидным только
+ * если auth_date не старше 24 часов (expiresIn: 86400 секунд).
  */
 export async function validateTelegramInitData(initData: string): Promise<{
     valid: boolean;
@@ -26,8 +26,8 @@ export async function validateTelegramInitData(initData: string): Promise<{
         }
 
         // Используем validateFp для получения конкретной ошибки валидации.
-        // expiresIn: 0 — отключаем проверку времени, т.к. Telegram кэширует initData.
-        const result = validateFp(initData, TELEGRAM_BOT_TOKEN, { expiresIn: 0 });
+        // expiresIn: 86400 — проверяем, что auth_date не старше 24 часов.
+        const result = validateFp(initData, TELEGRAM_BOT_TOKEN, { expiresIn: 86400 });
 
         if (either.isLeft(result)) {
             const err = result.left;
