@@ -4,12 +4,14 @@ import { Routes, Route, Link } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from './store/hooks'
 import { loadFromLocalStorage } from './store/cartSlice'
 import { loadCategories } from './store/categorySlice'
-import { signIn } from './store/authSlice'
+import { signIn, setInitialized } from './store/authSlice'
 import { HomePage } from './pages/HomePage'
 import { CategoryPage } from './pages/CategoryPage'
 import { CartPage } from './pages/CartPage'
 import { ProductPage } from './pages/ProductPage'
+import { ProfilePage } from './pages/ProfilePage'
 import { CartModal } from './components/CartModal'
+import { logger } from './utils/logger'
 
 function App() {
   const dispatch = useAppDispatch();
@@ -31,20 +33,50 @@ function App() {
     dispatch(loadCategories());
 
     // Авторизация через Telegram Mini App
+    console.log('[App] Инициализация авторизации...');
+    console.log('[App] window.Telegram:', (window as any).Telegram);
+    console.log('[App] window.Telegram?.WebApp:', (window as any).Telegram?.WebApp);
+
     const tg = (window as any).Telegram?.WebApp;
+
     if (tg) {
+      console.log('[App] Telegram WebApp SDK найден');
+      console.log('[App] tg.version:', tg.version);
+      console.log('[App] tg.platform:', tg.platform);
       tg.ready();
 
       // Получаем initData из Telegram Web App
       const initData = tg.initData;
+      console.log('[App] initData:', initData);
+      console.log('[App] initData length:', initData?.length ?? 0);
 
-      if (initData) {
-        dispatch(signIn(initData));
+      if (initData && initData.length > 0) {
+        console.log('[App] Отправляем initData на сервер для авторизации...');
+        dispatch(signIn(initData))
+          .then((result) => {
+            console.log('[App] signIn result:', result);
+            console.log('[App] signIn result.type:', result.type);
+            if (result.type === 'auth/signIn/fulfilled') {
+              console.log('[App] ✅ Авторизация успешна');
+            } else {
+              console.error('[App] ❌ Авторизация не удалась:', result.payload);
+            }
+          })
+          .catch((err) => {
+            console.error('[App] signIn exception:', err);
+          });
       } else {
-        console.warn('Telegram initData not available');
+        console.warn('[App] ⚠️ initData пустой — Telegram WebApp есть, но initData недоступен');
+        console.warn('[App] Возможно, приложение открыто не через Telegram Mini App');
+        logger.warn('Telegram initData not available');
+        // Помечаем авторизацию как завершённую (не авторизован)
+        dispatch(setInitialized());
       }
     } else {
-      console.warn('Telegram Web App SDK not available');
+      console.warn('[App] ⚠️ Telegram WebApp SDK не найден — приложение открыто вне Telegram');
+      logger.warn('Telegram Web App SDK not available');
+      // Помечаем авторизацию как завершённую (не авторизован)
+      dispatch(setInitialized());
     }
   }, [dispatch]);
 
@@ -112,6 +144,9 @@ function App() {
                 ✅ Авторизован
               </span>
             )}
+            <Link to="/profile" className="btn btn-light">
+              👤 Профиль
+            </Link>
             <button
               className="btn btn-light position-relative"
               onClick={() => setIsCartOpen(true)}
@@ -137,6 +172,7 @@ function App() {
         <Route path="/category/:categoryId" element={<CategoryPage />} />
         <Route path="/product/:id" element={<ProductPage />} />
         <Route path="/checkout" element={<CartPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
       </Routes>
 
       <footer className="bg-dark text-light py-5 mt-auto text-center fs-1">

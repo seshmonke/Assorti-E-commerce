@@ -1,5 +1,6 @@
 import axios from 'axios';
 import type { Category } from '../types/categories';
+import { logger } from '../utils/logger';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
 
@@ -7,6 +8,43 @@ const api = axios.create({
   baseURL: `${API_URL}/api`,
   withCredentials: true,
 });
+
+// Request interceptor
+api.interceptors.request.use(
+  (config) => {
+    logger.debug(`[API] ${config.method?.toUpperCase()} ${config.url}`, {
+      params: config.params,
+      data: config.data,
+    });
+    return config;
+  },
+  (error) => {
+    logger.error('[API] Request error', error);
+    return Promise.reject(error);
+  },
+);
+
+// Response interceptor
+api.interceptors.response.use(
+  (response) => {
+    logger.debug(`[API] Response ${response.status} ${response.config.url}`, {
+      data: response.data,
+    });
+    return response;
+  },
+  (error) => {
+    if (axios.isAxiosError(error)) {
+      logger.error(`[API] Response error ${error.response?.status} ${error.config?.url}`, {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message,
+      });
+    } else {
+      logger.error('[API] Unknown error', error);
+    }
+    return Promise.reject(error);
+  },
+);
 
 export interface Product {
   id: string;
@@ -91,4 +129,27 @@ export async function fetchSaleProducts(): Promise<Product[]> {
     throw new Error(data.error ?? 'Unknown API error');
   }
   return data.data.map(normalizeProduct);
+}
+
+export interface Order {
+  id: string;
+  productId: string;
+  product?: Product;
+  quantity: number;
+  totalPrice: number;
+  status: 'pending_payment' | 'paid' | 'delivered' | 'cancelled';
+  paymentMethod: string;
+  paymentId: string | null;
+  confirmationUrl: string | null;
+  telegramUserId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export async function fetchMyOrders(): Promise<Order[]> {
+  const { data } = await api.get<ApiResponse<Order[]>>('/orders/my');
+  if (!data.success || data.data === undefined) {
+    throw new Error(data.error ?? 'Unknown API error');
+  }
+  return data.data;
 }

@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import axios from 'axios';
+import { logger } from '../utils/logger';
 
 interface User {
     id: string;
@@ -15,6 +16,7 @@ interface User {
 interface AuthState {
     isAuthorized: boolean;
     isLoading: boolean;
+    isInitialized: boolean;
     user: User | null;
     error: string | null;
 }
@@ -22,6 +24,7 @@ interface AuthState {
 const initialState: AuthState = {
     isAuthorized: false,
     isLoading: false,
+    isInitialized: false,
     user: null,
     error: null,
 };
@@ -123,11 +126,23 @@ export const authSlice = createSlice({
             state.error = null;
         },
         resetAuth: () => initialState,
+        /**
+         * Устанавливает isInitialized без авторизации
+         * (используется когда Telegram SDK недоступен)
+         */
+        setInitialized: (state) => {
+            console.log('[AuthSlice] setInitialized called — Telegram SDK unavailable, marking as not authorized');
+            state.isInitialized = true;
+            state.isAuthorized = false;
+            state.isLoading = false;
+        },
     },
     extraReducers: (builder) => {
         // signIn
         builder
             .addCase(signIn.pending, (state) => {
+                console.log('[Auth] signIn.pending — начало авторизации');
+                logger.info('[Auth] Sign in pending');
                 state.isLoading = true;
                 state.error = null;
             })
@@ -141,14 +156,33 @@ export const authSlice = createSlice({
                         refreshToken: string;
                     }>,
                 ) => {
+                    console.log('[Auth] signIn.fulfilled — авторизация успешна', {
+                        userId: action.payload.user.id,
+                        telegramId: action.payload.user.telegramId,
+                        username: action.payload.user.username,
+                        firstName: action.payload.user.firstName,
+                    });
+                    logger.info('[Auth] Sign in successful', {
+                        userId: action.payload.user.id,
+                        username: action.payload.user.username,
+                    });
                     state.isLoading = false;
+                    state.isInitialized = true;
                     state.isAuthorized = true;
                     state.user = action.payload.user;
                     state.error = null;
                 },
             )
             .addCase(signIn.rejected, (state, action) => {
+                console.error('[Auth] signIn.rejected — авторизация не удалась', {
+                    error: action.payload,
+                    errorType: typeof action.payload,
+                });
+                logger.warn('[Auth] Sign in failed', {
+                    error: action.payload,
+                });
                 state.isLoading = false;
+                state.isInitialized = true;
                 state.isAuthorized = false;
                 state.user = null;
                 state.error = action.payload as string;
@@ -157,14 +191,24 @@ export const authSlice = createSlice({
         // refreshToken
         builder
             .addCase(refreshToken.pending, (state) => {
+                console.log('[Auth] refreshToken.pending');
+                logger.debug('[Auth] Refresh token pending');
                 state.isLoading = true;
             })
             .addCase(refreshToken.fulfilled, (state) => {
+                console.log('[Auth] refreshToken.fulfilled — токен обновлён');
+                logger.info('[Auth] Refresh token successful');
                 state.isLoading = false;
                 state.isAuthorized = true;
                 state.error = null;
             })
             .addCase(refreshToken.rejected, (state, action) => {
+                console.error('[Auth] refreshToken.rejected — обновление токена не удалось', {
+                    error: action.payload,
+                });
+                logger.warn('[Auth] Refresh token failed', {
+                    error: action.payload,
+                });
                 state.isLoading = false;
                 state.isAuthorized = false;
                 state.user = null;
@@ -174,20 +218,30 @@ export const authSlice = createSlice({
         // logout
         builder
             .addCase(logout.pending, (state) => {
+                console.log('[Auth] logout.pending');
+                logger.info('[Auth] Logout pending');
                 state.isLoading = true;
             })
             .addCase(logout.fulfilled, (state) => {
+                console.log('[Auth] logout.fulfilled — выход выполнен');
+                logger.info('[Auth] Logout successful');
                 state.isLoading = false;
                 state.isAuthorized = false;
                 state.user = null;
                 state.error = null;
             })
             .addCase(logout.rejected, (state, action) => {
+                console.error('[Auth] logout.rejected — ошибка выхода', {
+                    error: action.payload,
+                });
+                logger.warn('[Auth] Logout failed', {
+                    error: action.payload,
+                });
                 state.isLoading = false;
                 state.error = action.payload as string;
             });
     },
 });
 
-export const { clearError, resetAuth } = authSlice.actions;
+export const { clearError, resetAuth, setInitialized } = authSlice.actions;
 export const authReducer = authSlice.reducer;

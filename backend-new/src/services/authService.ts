@@ -1,16 +1,16 @@
 import jwt from 'jsonwebtoken';
-import { isValid } from '@tma.js/init-data-node';
+import { validateFp, ExpiredError, SignatureInvalidError, SignatureMissingError, AuthDateInvalidError } from '@tma.js/init-data-node';
+import { either } from 'fp-ts';
 import { prisma } from '../lib/prisma.js';
 import type { IUser } from '../types/index.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-me';
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'your-super-secret-refresh-key-change-me';
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
-const AUTH_DATE_TOLERANCE = 24 * 60 * 60 * 1000; // 24 часа в миллисекундах
-
 /**
  * Валидирует initData от Telegram Mini App
- * Проверяет подпись (HMAC-SHA256) и свежесть auth_date
+ * Проверяет подпись (HMAC-SHA256). Проверка времени отключена (expiresIn: 0),
+ * так как Telegram кэширует initData и auth_date может быть старше 24 часов.
  */
 export async function validateTelegramInitData(initData: string): Promise<{
     valid: boolean;
@@ -25,13 +25,27 @@ export async function validateTelegramInitData(initData: string): Promise<{
             };
         }
 
-        // Используем @tma.js/init-data-node для валидации подписи
-        const valid = isValid(initData, TELEGRAM_BOT_TOKEN);
+        // Используем validateFp для получения конкретной ошибки валидации.
+        // expiresIn: 0 — отключаем проверку времени, т.к. Telegram кэширует initData.
+        const result = validateFp(initData, TELEGRAM_BOT_TOKEN, { expiresIn: 0 });
 
-        if (!valid) {
+        if (either.isLeft(result)) {
+            const err = result.left;
+            let errorMsg = 'Невалидная подпись initData';
+
+            if (err instanceof ExpiredError) {
+                errorMsg = `initData истёк: ${err.message}`;
+            } else if (err instanceof SignatureInvalidError) {
+                errorMsg = 'Невалидная подпись initData (неверный TELEGRAM_BOT_TOKEN?)';
+            } else if (err instanceof SignatureMissingError) {
+                errorMsg = 'Отсутствует hash в initData';
+            } else if (err instanceof AuthDateInvalidError) {
+                errorMsg = 'Отсутствует или невалидный auth_date в initData';
+            }
+
             return {
                 valid: false,
-                error: 'Невалидная подпись или истёкшие данные initData',
+                error: errorMsg,
             };
         }
 

@@ -6,6 +6,33 @@ import type { CreateOrderDTO, UpdateOrderStatusDTO, ApiResponse, OrderStatus } f
 
 export class OrderController {
     /**
+     * GET /api/orders/my - Получить заказы текущего пользователя
+     */
+    static async getMyOrders(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const telegramUserId = req.user?.telegramId;
+
+            if (!telegramUserId) {
+                res.status(401).json({
+                    success: false,
+                    error: 'User not authenticated',
+                });
+                return;
+            }
+
+            const orders = await OrderModel.findByTelegramUserId(telegramUserId);
+
+            const response: ApiResponse<typeof orders> = {
+                success: true,
+                data: orders,
+            };
+            res.json(response);
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
      * GET /api/orders - Получить все заказы
      */
     static async getAllOrders(req: Request, res: Response, next: NextFunction): Promise<void> {
