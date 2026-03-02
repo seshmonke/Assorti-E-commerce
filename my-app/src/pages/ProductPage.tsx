@@ -74,8 +74,8 @@ export function ProductPage() {
   };
 
   // Формируем items для ImageGallery
-  const galleryImages = product.images.length > 0
-    ? product.images.map((img) => ({
+  const galleryImages = (product.images?.length ?? 0) > 0
+    ? (product.images ?? []).map((img) => ({
         original: img,
         thumbnail: img,
         originalAlt: product.name,
@@ -104,7 +104,7 @@ export function ProductPage() {
             <div className="product-gallery-wrapper">
               <ImageGallery
                 items={galleryImages}
-                showThumbnails={product.images.length > 1}
+                showThumbnails={(product.images?.length ?? 0) > 1}
                 showFullscreenButton={true}
                 showPlayButton={false}
                 slideDuration={300}

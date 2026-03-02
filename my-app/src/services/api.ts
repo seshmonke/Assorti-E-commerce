@@ -76,7 +76,7 @@ function normalizeProduct(product: Product): Product {
   const sizes = Array.isArray(product.sizes)
     ? product.sizes
     : typeof product.sizes === 'string'
-      ? JSON.parse(product.sizes)
+      ? (() => { try { return JSON.parse(product.sizes as unknown as string); } catch { return []; } })()
       : [];
 
   const composition = (
@@ -86,14 +86,23 @@ function normalizeProduct(product: Product): Product {
   )
     ? product.composition as Record<string, number>
     : typeof product.composition === 'string'
-      ? JSON.parse(product.composition)
+      ? (() => { try { return JSON.parse(product.composition as unknown as string); } catch { return {}; } })()
       : {};
 
-  const images = Array.isArray(product.images)
-    ? product.images
-    : typeof product.images === 'string'
-      ? JSON.parse(product.images)
-      : [];
+  let images: string[] = [];
+  if (Array.isArray(product.images)) {
+    images = product.images;
+  } else if (typeof product.images === 'string') {
+    const raw = product.images as string;
+    // Может быть JSON-массив или одиночный URL (старая схема с полем image)
+    if (raw.startsWith('[')) {
+      try { images = JSON.parse(raw); } catch { images = []; }
+    } else if (raw.length > 0) {
+      images = [raw];
+    }
+  } else if (product.images == null) {
+    images = [];
+  }
 
   return { ...product, sizes, composition, images };
 }

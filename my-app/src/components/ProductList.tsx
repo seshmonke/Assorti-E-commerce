@@ -69,7 +69,7 @@ export function ProductList({ categoryId }: ProductListProps) {
             )}
             <Link to={`/product/${product.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
               <img
-                src={product.images[0] ?? 'https://placehold.co/400x400?text=Нет+фото'}
+                src={product.images?.[0] ?? 'https://placehold.co/400x400?text=Нет+фото'}
                 className="card-img-top"
                 alt={product.name}
                 style={{ objectFit: 'cover', height: '250px', cursor: 'pointer' }}

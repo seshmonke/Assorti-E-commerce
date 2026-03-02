@@ -81,7 +81,7 @@ export function CartModal({ isOpen, onClose }: CartModalProps) {
                           <td>
                             <div className="d-flex align-items-center gap-2">
                               <img
-                                src={item.images[0] ?? 'https://placehold.co/50x50?text=?'}
+                                src={item.images?.[0] ?? 'https://placehold.co/50x50?text=?'}
                                 alt={item.name}
                                 style={{
                                   width: '50px',

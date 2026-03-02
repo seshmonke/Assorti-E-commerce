@@ -2,77 +2,112 @@ import type { Prisma } from '../../generated/prisma/client.js';
 import { prisma } from '../lib/prisma.js';
 import type { CreateProductDTO, UpdateProductDTO, IProduct } from '../types/index.js';
 
+/**
+ * Безопасный парсинг JSON-поля. Если значение уже объект/массив — возвращает как есть.
+ * Если строка — парсит. Если пустая строка или null — возвращает fallback.
+ */
+function safeParseJson<T>(value: unknown, fallback: T): T {
+    if (value === null || value === undefined || value === '') return fallback;
+    if (typeof value === 'string') {
+        try {
+            return JSON.parse(value) as T;
+        } catch {
+            return fallback;
+        }
+    }
+    return value as T;
+}
+
+/**
+ * Нормализует JSON-поля продукта (images, sizes, composition)
+ */
+function normalizeProductJson(product: IProduct): IProduct {
+    return {
+        ...product,
+        images: safeParseJson<string[]>(product.images as unknown, []),
+        sizes: safeParseJson<unknown[]>(product.sizes as unknown, []),
+        composition: safeParseJson<unknown>(product.composition as unknown, {}),
+    };
+}
+
 export class ProductModel {
     /**
      * Получить все активные продукты (не архивированные)
      */
     static async findAll(): Promise<IProduct[]> {
-        return prisma.product.findMany({
+        const products = await prisma.product.findMany({
             where: { archive: false },
             include: { category: true },
         }) as unknown as IProduct[];
+        return products.map(normalizeProductJson);
     }
 
     /**
      * Получить все продукты (включая архивированные)
      */
     static async findAllIncludingArchived(): Promise<IProduct[]> {
-        return prisma.product.findMany({
+        const products = await prisma.product.findMany({
             include: { category: true },
         }) as unknown as IProduct[];
+        return products.map(normalizeProductJson);
     }
 
     /**
      * Получить все архивированные продукты
      */
     static async findAllArchived(): Promise<IProduct[]> {
-        return prisma.product.findMany({
+        const products = await prisma.product.findMany({
             where: { archive: true },
             include: { category: true },
         }) as unknown as IProduct[];
+        return products.map(normalizeProductJson);
     }
 
     /**
      * Получить активный продукт по ID
      */
     static async findById(id: string): Promise<IProduct | null> {
-        return prisma.product.findUnique({
+        const product = await prisma.product.findUnique({
             where: { id },
             include: { category: true },
         }) as unknown as IProduct | null;
+        return product ? normalizeProductJson(product) : null;
     }
 
     /**
      * Получить продукт по ID (включая архивированные)
      */
     static async findByIdIncludingArchived(id: string): Promise<IProduct | null> {
-        return prisma.product.findUnique({
+        const product = await prisma.product.findUnique({
             where: { id },
             include: { category: true },
         }) as unknown as IProduct | null;
+        return product ? normalizeProductJson(product) : null;
     }
 
     /**
      * Получить активные продукты по категории ID
      */
     static async findByCategory(categoryId: string): Promise<IProduct[]> {
-        return prisma.product.findMany({
+        const products = await prisma.product.findMany({
             where: { categoryId, archive: false },
             include: { category: true },
         }) as unknown as IProduct[];
+        return products.map(normalizeProductJson);
     }
 
     /**
      * Получить активные товары со скидкой (discount > 0)
      */
     static async findOnSale(): Promise<IProduct[]> {
-        return prisma.product.findMany({
+        const products = await prisma.product.findMany({
             where: {
                 discount: { gt: 0 },
                 archive: false,
             },
             include: { category: true },
         }) as unknown as IProduct[];
+        return products.map(normalizeProductJson);
     }
 
     /**
@@ -147,7 +182,7 @@ export class ProductModel {
      * Поиск активных продуктов по названию
      */
     static async search(query: string): Promise<IProduct[]> {
-        return prisma.product.findMany({
+        const products = await prisma.product.findMany({
             where: {
                 name: {
                     contains: query,
@@ -156,6 +191,7 @@ export class ProductModel {
             },
             include: { category: true },
         }) as unknown as IProduct[];
+        return products.map(normalizeProductJson);
     }
 
 }
