@@ -3,8 +3,9 @@ import { type Context, Keyboard } from 'grammy';
 import { apiService } from '../services/apiService';
 import { cartService } from '../services/cartService';
 import { mainMenuKeyboard, backKeyboard } from '../keyboards/mainMenu';
+import { formatOrderCard, buildOrderActionKeyboard } from './showOrders';
 import { logger } from '../utils/logger';
-import type { Product } from '../types';
+import type { Product, Order } from '../types';
 
 type MyContext = ConversationFlavor<Context>;
 type MyConversation = Conversation<MyContext, MyContext>;
@@ -164,20 +165,121 @@ export async function showCartConversation(
         // Очищаем корзину
         conversation.external(() => cartService.clearCart(userId));
 
-        const itemLines = currentCart.map((p, idx) => `${idx + 1}. ${p.name} — ${p.price} руб.`).join('\n');
-
+        // Показываем карточку заказа с меню управления
         await ctx.reply(
-          `✅ <b>Заказ оформлен!</b>\n\n` +
-          `🆔 ID заказа: <code>${order.id}</code>\n` +
-          `📦 Товаров: ${currentCart.length} шт.\n\n` +
-          `<code>${itemLines}</code>\n\n` +
-          `💰 Итого: <b>${totalPrice} руб.</b>\n` +
-          `💵 Оплата: Наличными\n` +
-          `📊 Статус: ⏳ Ожидает оплаты\n\n` +
-          `Корзина очищена. Когда клиент оплатит — найдите заказ и отметьте его оплаченным.`,
-          { parse_mode: 'HTML', reply_markup: mainMenuKeyboard },
+          `✅ <b>Заказ оформлен!</b>\n\n` + formatOrderCard(order),
+          { parse_mode: 'HTML', reply_markup: buildOrderActionKeyboard(order) },
         );
-        return;
+
+        let currentOrder: Order = order;
+        const confirmDeleteKeyboard = new Keyboard()
+          .text('✅ Да, удалить').text('❌ Отмена')
+          .resized();
+
+        // Цикл управления заказом
+        while (true) {
+          const actionCtx = await conversation.wait();
+          const actionText = actionCtx.message?.text?.trim();
+          if (!actionText) continue;
+
+          if (actionText === '⬅️ Назад' || actionText === '🏠 Главное меню') {
+            await ctx.reply('Главное меню', { reply_markup: mainMenuKeyboard });
+            return;
+          }
+
+          // ── Отметить оплаченным ──────────────────────────────────────
+          if (actionText === '✅ Отметить оплаченным') {
+            try {
+              const updated = await conversation.external(() =>
+                apiService.updateOrderStatus(currentOrder.id, { status: 'paid' }),
+              );
+              currentOrder = updated;
+              logger.info('Order marked as paid (cash)', { orderId: currentOrder.id });
+              await ctx.reply(
+                '✅ Статус обновлён: <b>Оплачен</b>\n\n' + formatOrderCard(currentOrder),
+                { parse_mode: 'HTML', reply_markup: buildOrderActionKeyboard(currentOrder) },
+              );
+            } catch (err) {
+              logger.error('Failed to update order status', { err });
+              await ctx.reply('⚠️ Ошибка при обновлении статуса.', {
+                reply_markup: buildOrderActionKeyboard(currentOrder),
+              });
+            }
+            continue;
+          }
+
+          // ── Отметить доставленным ────────────────────────────────────
+          if (actionText === '🚚 Отметить доставленным') {
+            try {
+              const updated = await conversation.external(() =>
+                apiService.updateOrderStatus(currentOrder.id, { status: 'delivered' }),
+              );
+              currentOrder = updated;
+              logger.info('Order marked as delivered', { orderId: currentOrder.id });
+              await ctx.reply(
+                '🚚 Статус обновлён: <b>Доставлен</b>\n\n' + formatOrderCard(currentOrder),
+                { parse_mode: 'HTML', reply_markup: buildOrderActionKeyboard(currentOrder) },
+              );
+            } catch (err) {
+              logger.error('Failed to update order status', { err });
+              await ctx.reply('⚠️ Ошибка при обновлении статуса.', {
+                reply_markup: buildOrderActionKeyboard(currentOrder),
+              });
+            }
+            continue;
+          }
+
+          // ── Отменить заказ ───────────────────────────────────────────
+          if (actionText === '❌ Отменить заказ') {
+            try {
+              const updated = await conversation.external(() =>
+                apiService.cancelOrder(currentOrder.id),
+              );
+              currentOrder = updated;
+              logger.info('Order cancelled', { orderId: currentOrder.id });
+              await ctx.reply(
+                '❌ Заказ отменён.\n\n' + formatOrderCard(currentOrder),
+                { parse_mode: 'HTML', reply_markup: buildOrderActionKeyboard(currentOrder) },
+              );
+            } catch (err) {
+              logger.error('Failed to cancel order', { err });
+              await ctx.reply('⚠️ Ошибка при отмене заказа.', {
+                reply_markup: buildOrderActionKeyboard(currentOrder),
+              });
+            }
+            continue;
+          }
+
+          // ── Удалить заказ ────────────────────────────────────────────
+          if (actionText === '🗑 Удалить заказ') {
+            await ctx.reply(
+              `⚠️ Вы уверены, что хотите удалить заказ <code>${currentOrder.id}</code>?`,
+              { parse_mode: 'HTML', reply_markup: confirmDeleteKeyboard },
+            );
+
+            const confirmCtx = await conversation.wait();
+            const confirmText = confirmCtx.message?.text?.trim();
+
+            if (confirmText === '✅ Да, удалить') {
+              try {
+                await conversation.external(() => apiService.deleteOrder(currentOrder.id));
+                logger.info('Order deleted', { orderId: currentOrder.id });
+                await ctx.reply('🗑 Заказ успешно удалён.', { reply_markup: mainMenuKeyboard });
+                return;
+              } catch (err) {
+                logger.error('Failed to delete order', { err });
+                await ctx.reply('⚠️ Ошибка при удалении заказа.', {
+                  reply_markup: buildOrderActionKeyboard(currentOrder),
+                });
+              }
+            } else {
+              await ctx.reply('❌ Удаление отменено.', {
+                reply_markup: buildOrderActionKeyboard(currentOrder),
+              });
+            }
+            continue;
+          }
+        }
       } catch (err: any) {
         logger.error('Failed to create cart order', { err });
         const errorMsg = err?.response?.data?.error ?? err?.message ?? 'неизвестная ошибка';

@@ -64,7 +64,7 @@ function formatOrderList(orders: Order[]): string {
   return `📦 <b>Список заказов (${orders.length})</b>\n\n<code>${lines.join('\n')}</code>`;
 }
 
-function buildOrderActionKeyboard(order: Order): Keyboard {
+export function buildOrderActionKeyboard(order: Order): Keyboard {
   const kb = new Keyboard().text('⬅️ Назад').text('🏠 Главное меню');
 
   if (order.status === 'pending_payment') {

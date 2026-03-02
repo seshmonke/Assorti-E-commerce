@@ -275,6 +275,7 @@ export class OrderController {
 
     /**
      * DELETE /api/orders/:id - Удалить заказ
+     * Атомарно удаляет заказ и разархивирует все его товары
      */
     static async deleteOrder(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
@@ -289,12 +290,36 @@ export class OrderController {
                 return;
             }
 
-            const order = await OrderModel.delete(id);
+            // Собираем productId всех товаров в заказе
+            const productIds = existingOrder.items.map((item) => item.productId);
+
+            // Атомарно: удаляем заказ и разархивируем все его товары
+            const order = await prisma.$transaction(async (tx) => {
+                const deletedOrder = await tx.order.delete({
+                    where: { id },
+                    include: {
+                        items: {
+                            include: {
+                                product: { include: { category: true } },
+                            },
+                        },
+                    },
+                });
+
+                if (productIds.length > 0) {
+                    await tx.product.updateMany({
+                        where: { id: { in: productIds } },
+                        data: { archive: false },
+                    });
+                }
+
+                return deletedOrder;
+            });
 
             const response: ApiResponse<typeof order> = {
                 success: true,
                 data: order,
-                message: 'Order deleted successfully',
+                message: 'Order deleted successfully and products unarchived',
             };
             res.json(response);
         } catch (error) {
