@@ -3,7 +3,7 @@ export interface Product {
   id: string;
   name: string;
   price: number;
-  image: string;
+  images: string[];
   categoryId: string;
   category?: Category;
   description: string;
@@ -18,7 +18,7 @@ export interface Product {
 export interface CreateProductData {
   name: string;
   price: number;
-  image: string;
+  images: string[];
   categoryId: string;
   description: string;
   sizes: unknown;
@@ -29,7 +29,7 @@ export interface CreateProductData {
 export interface UpdateProductData {
   name?: string;
   price?: number;
-  image?: string;
+  images?: string[];
   categoryId?: string;
   description?: string;
   sizes?: unknown;
@@ -126,7 +126,7 @@ export interface Archive {
   id: string;
   name: string;
   price: number;
-  image: string;
+  images: string[];
   categoryId: string;
   category?: Category;
   categoryName?: string;
@@ -141,7 +141,7 @@ export interface Archive {
 export interface CreateArchiveData {
   name: string;
   price: number;
-  image: string;
+  images: string[];
   categoryId: string;
   description: string;
   sizes: unknown;

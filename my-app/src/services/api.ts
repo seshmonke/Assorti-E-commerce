@@ -50,7 +50,7 @@ export interface Product {
   id: string;
   name: string;
   price: number;
-  image: string;
+  images: string[];
   categoryId: string;
   category?: Category;
   description: string;
@@ -69,7 +69,7 @@ interface ApiResponse<T> {
 }
 
 /**
- * Нормализация JSON-полей продукта (sizes, composition).
+ * Нормализация JSON-полей продукта (sizes, composition, images).
  * SQLite + Prisma могут вернуть их как строку вместо объекта.
  */
 function normalizeProduct(product: Product): Product {
@@ -89,7 +89,13 @@ function normalizeProduct(product: Product): Product {
       ? JSON.parse(product.composition)
       : {};
 
-  return { ...product, sizes, composition };
+  const images = Array.isArray(product.images)
+    ? product.images
+    : typeof product.images === 'string'
+      ? JSON.parse(product.images)
+      : [];
+
+  return { ...product, sizes, composition, images };
 }
 
 export async function fetchAllProducts(): Promise<Product[]> {

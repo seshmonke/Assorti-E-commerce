@@ -79,10 +79,11 @@ export class ProductModel {
      * Создать новый продукт
      */
     static async create(data: CreateProductDTO): Promise<IProduct> {
-        const { categoryId, sizes, composition, archive, ...rest } = data;
+        const { categoryId, sizes, composition, images, archive, ...rest } = data;
         return prisma.product.create({
             data: {
                 ...rest,
+                images: (images ?? []) as Prisma.InputJsonValue,
                 sizes: sizes as Prisma.InputJsonValue,
                 composition: composition as Prisma.InputJsonValue,
                 archive: archive ?? false,
@@ -96,11 +97,12 @@ export class ProductModel {
      * Обновить продукт
      */
     static async update(id: string, data: UpdateProductDTO): Promise<IProduct> {
-        const { categoryId, sizes, composition, ...rest } = data;
+        const { categoryId, sizes, composition, images, ...rest } = data;
         return prisma.product.update({
             where: { id },
             data: {
                 ...rest,
+                ...(images !== undefined ? { images: images as Prisma.InputJsonValue } : {}),
                 ...(sizes !== undefined ? { sizes: sizes as Prisma.InputJsonValue } : {}),
                 ...(composition !== undefined ? { composition: composition as Prisma.InputJsonValue } : {}),
                 ...(categoryId ? { category: { connect: { id: categoryId } } } : {}),

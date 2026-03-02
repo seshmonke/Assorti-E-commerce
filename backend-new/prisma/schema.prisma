@@ -38,7 +38,7 @@ model Product {
   id                String      @id @default(uuid())
   name              String
   price             Int
-  image             String
+  images            Json        @default("[]")
   categoryId        String
   category          Category    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   description       String

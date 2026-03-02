@@ -244,9 +244,9 @@ export function ProfilePage() {
                                   {order.items.map((item) => (
                                     <tr key={item.id}>
                                       <td>
-                                        {item.product?.image && (
+                                        {item.product?.images?.[0] && (
                                           <img
-                                            src={item.product.image}
+                                            src={item.product.images[0]}
                                             alt={item.product.name}
                                             style={{
                                               width: '50px',

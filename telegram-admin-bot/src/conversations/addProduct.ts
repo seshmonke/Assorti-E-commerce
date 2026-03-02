@@ -51,10 +51,10 @@ export async function addProductConversation(
     break;
   }
 
-  // Шаг 3: Картинка
-  await ctx.reply('Шаг 3/8: Введите URL картинки:', { reply_markup: backKeyboard });
+  // Шаг 3: Картинки
+  await ctx.reply('Шаг 3/8: Введите URL картинок через запятую (можно одну):\nПример: https://example.com/img1.jpg,https://example.com/img2.jpg', { reply_markup: backKeyboard });
 
-  let image = '';
+  let images: string[] = [];
   while (true) {
     const c = await conversation.wait();
     const t = c.message?.text?.trim();
@@ -63,7 +63,7 @@ export async function addProductConversation(
       await ctx.reply('Главное меню', { reply_markup: mainMenuKeyboard });
       return;
     }
-    image = t;
+    images = t.split(',').map((s) => s.trim()).filter(Boolean);
     break;
   }
 
@@ -178,7 +178,7 @@ export async function addProductConversation(
   // Создаём товар
   try {
     const product = await conversation.external(() =>
-      apiService.createProduct({ name, price, image, categoryId, description, sizes, composition, discount }),
+      apiService.createProduct({ name, price, images, categoryId, description, sizes, composition, discount }),
     );
     await ctx.reply(
       `✅ Товар успешно добавлен!\n\n📦 <b>${product.name}</b>\n🆔 ID: <code>${product.id}</code>`,

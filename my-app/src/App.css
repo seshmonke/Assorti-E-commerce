@@ -85,3 +85,30 @@
   color: #D44040 !important;
   background-color: white;
 }
+
+/* ── Image Gallery ─────────────────────────────────────────────────────────── */
+.product-gallery-wrapper .image-gallery {
+  max-height: 70vh;
+  touch-action: pan-y pan-x;
+}
+
+.product-gallery-wrapper .image-gallery-slide img {
+  max-height: 60vh;
+  object-fit: contain;
+  width: 100%;
+}
+
+.product-gallery-wrapper .image-gallery-thumbnails {
+  margin-top: 10px;
+}
+
+.product-gallery-wrapper .image-gallery-thumbnail {
+  border: 2px solid transparent;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.product-gallery-wrapper .image-gallery-thumbnail.active,
+.product-gallery-wrapper .image-gallery-thumbnail:hover {
+  border-color: #dc3545;
+}

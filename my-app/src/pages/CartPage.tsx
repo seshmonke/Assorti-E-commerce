@@ -395,9 +395,9 @@ export default function CartPage() {
             return (
               <div key={item.id} className="card mb-2 border-0 shadow-sm">
                 <div className="card-body d-flex align-items-center gap-3 py-2">
-                  {item.image && (
+                  {item.images?.[0] && (
                     <img
-                      src={item.image}
+                      src={item.images[0]}
                       alt={item.name}
                       style={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 8 }}
                     />

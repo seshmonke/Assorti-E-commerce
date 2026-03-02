@@ -128,13 +128,13 @@ export default function OrderPage() {
         <div className="card-body py-2">
           {order.items.map((item) => (
             <div key={item.id} className="d-flex align-items-center gap-3 py-2 border-bottom">
-              {item.product?.image && (
-                <img
-                  src={item.product.image}
-                  alt={item.name}
-                  style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 6 }}
-                />
-              )}
+                          {item.product?.images?.[0] && (
+                            <img
+                              src={item.product.images[0]}
+                              alt={item.name}
+                              style={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 8 }}
+                            />
+                          )}
               <div className="flex-fill">
                 <div className="fw-semibold small">{item.name}</div>
                 <div className="text-muted" style={{ fontSize: 12 }}>

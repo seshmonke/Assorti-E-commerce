@@ -6,7 +6,7 @@ export interface CartItem {
   id: string;
   name: string;
   price: number;
-  image: string;
+  images: string[];
   quantity: number;
   size: string;
   discount?: number; // Процент скидки
@@ -54,7 +54,7 @@ const cartSlice = createSlice({
           id: product.id,
           name: product.name,
           price: product.price,
-          image: product.image,
+          images: product.images,
           quantity: 1,
           size: size,
           discount: product.discount ?? undefined,

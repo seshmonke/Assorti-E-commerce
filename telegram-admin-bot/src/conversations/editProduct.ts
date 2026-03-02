@@ -38,7 +38,7 @@ export function formatProductCard(product: Product): string {
   text += `🆔 ID: <code>${product.id}</code>\n`;
   text += `📝 Название: <b>${namePrefix}${product.name}</b>\n`;
   text += `💰 Цена: <b>${product.price} руб.</b>\n`;
-  text += `🖼 Картинка: ${product.image}\n`;
+  text += `🖼 Картинки: ${Array.isArray(product.images) ? product.images.join(', ') : '—'}\n`;
   text += `📂 Категория: ${categoryDisplay}\n`;
   text += `📄 Описание: ${product.description}\n`;
   text += `📏 Размеры: ${sizes}\n`;
@@ -308,7 +308,7 @@ async function runEditLoop(
 
     if (editText === '✏️ Изменить название') { fieldPrompt = 'Введите новое название:'; fieldKey = 'name'; }
     else if (editText === '✏️ Изменить цену') { fieldPrompt = 'Введите новую цену (число):'; fieldKey = 'price'; }
-    else if (editText === '✏️ Изменить картинку') { fieldPrompt = 'Введите новый URL картинки:'; fieldKey = 'image'; }
+    else if (editText === '✏️ Изменить картинку') { fieldPrompt = 'Введите URL картинок через запятую (можно одну):'; fieldKey = 'images'; }
     else if (editText === '✏️ Изменить категорию') { fieldPrompt = 'Выберите новую категорию:'; fieldKey = 'category'; }
     else if (editText === '✏️ Изменить размер') { fieldPrompt = 'Введите размеры через запятую (S,M,L,XL):'; fieldKey = 'sizes'; }
     else if (editText === '✏️ Изменить состав') { fieldPrompt = 'Введите состав через запятую:'; fieldKey = 'composition'; }
@@ -360,6 +360,8 @@ async function runEditLoop(
         continue;
       }
       updateData.categoryId = selectedCat.id;
+    } else if (fieldKey === 'images') {
+      updateData.images = newValue.split(',').map((s) => s.trim()).filter(Boolean);
     } else if (fieldKey === 'sizes') {
       updateData.sizes = newValue.split(',').map((s) => s.trim());
     } else if (fieldKey === 'composition') {

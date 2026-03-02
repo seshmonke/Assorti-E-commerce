@@ -2,7 +2,7 @@ export interface IProduct {
     id: string;
     name: string;
     price: number;
-    image: string;
+    images: string[];
     categoryId: string;
     category?: ICategory;
     description: string;
@@ -17,7 +17,7 @@ export interface IProduct {
 export interface CreateProductDTO {
     name: string;
     price: number;
-    image: string;
+    images: string[];
     categoryId: string;
     description: string;
     sizes: unknown;
@@ -29,7 +29,7 @@ export interface CreateProductDTO {
 export interface UpdateProductDTO {
     name?: string;
     price?: number;
-    image?: string;
+    images?: string[];
     categoryId?: string;
     description?: string;
     sizes?: unknown;

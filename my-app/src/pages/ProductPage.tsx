@@ -1,10 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import ImageGallery from 'react-image-gallery';
+import 'react-image-gallery/styles/image-gallery.css';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { loadProductById, clearCurrentProduct } from '../store/productsSlice';
 import { addToCart } from '../store/cartSlice';
 
 const DELIVERY_INFO = 'Доставка по России: 2-7 дней. Бесплатная доставка при заказе от 3000 ₽. Возврат в течение 14 дней.';
+
+const tg = window.Telegram?.WebApp;
 
 export function ProductPage() {
   const { id } = useParams<{ id: string }>();
@@ -62,11 +66,27 @@ export function ProductPage() {
   const handleAddToCart = () => {
     dispatch(addToCart({ product, size: selectedSize }));
     setIsAdded(true);
+    tg?.HapticFeedback?.impactOccurred('light');
 
     setTimeout(() => {
       setIsAdded(false);
     }, 600);
   };
+
+  // Формируем items для ImageGallery
+  const galleryImages = product.images.length > 0
+    ? product.images.map((img) => ({
+        original: img,
+        thumbnail: img,
+        originalAlt: product.name,
+        thumbnailAlt: product.name,
+      }))
+    : [{
+        original: 'https://placehold.co/600x600?text=Нет+фото',
+        thumbnail: 'https://placehold.co/200x200?text=Нет+фото',
+        originalAlt: product.name,
+        thumbnailAlt: product.name,
+      }];
 
   return (
     <main className="flex-grow-1 py-4">
@@ -79,14 +99,18 @@ export function ProductPage() {
         </button>
 
         <div className="row g-4">
-          {/* Фото товара */}
+          {/* Галерея товара */}
           <div className="col-lg-6">
-            <div className="card border-0 shadow-sm">
-              <img
-                src={product.image}
-                className="card-img-top"
-                alt={product.name}
-                style={{ objectFit: 'cover', height: '500px' }}
+            <div className="product-gallery-wrapper">
+              <ImageGallery
+                items={galleryImages}
+                showThumbnails={product.images.length > 1}
+                showFullscreenButton={true}
+                showPlayButton={false}
+                slideDuration={300}
+                thumbnailPosition="bottom"
+                lazyLoad={true}
+                onClick={() => tg?.HapticFeedback?.impactOccurred('light')}
               />
             </div>
           </div>
