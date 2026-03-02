@@ -62,11 +62,26 @@ export interface UpdateCategoryDTO {
 export type OrderStatus = 'pending_payment' | 'paid' | 'delivered' | 'cancelled';
 export type PaymentMethod = 'card' | 'cash';
 
-export interface IOrder {
+export interface IOrderItem {
     id: string;
+    orderId: string;
     productId: string;
     product?: IProduct;
     quantity: number;
+    price: number;
+    name: string;
+}
+
+export interface CreateOrderItemDTO {
+    productId: string;
+    quantity?: number;
+    price: number;
+    name: string;
+}
+
+export interface IOrder {
+    id: string;
+    items: IOrderItem[];
     totalPrice: number;
     status: OrderStatus;
     paymentMethod: PaymentMethod;
@@ -78,8 +93,7 @@ export interface IOrder {
 }
 
 export interface CreateOrderDTO {
-    productId: string;
-    quantity?: number;
+    items: CreateOrderItemDTO[];
     totalPrice: number;
     telegramUserId?: string;
     paymentMethod?: PaymentMethod;

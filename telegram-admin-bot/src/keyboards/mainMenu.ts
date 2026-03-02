@@ -9,7 +9,7 @@ export const mainMenuKeyboard = new Keyboard()
   .row()
   .text('📦 Посмотреть заказы').text('🔎 Найти заказ')
   .row()
-  .text('📁 Посмотреть архив')
+  .text('📁 Посмотреть архив').text('🛒 Корзина')
   .resized();
 
 export const backKeyboard = new Keyboard()

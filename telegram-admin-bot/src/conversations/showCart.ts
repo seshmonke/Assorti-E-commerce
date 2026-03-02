@@ -32,9 +32,9 @@ function formatCartList(products: Product[]): string {
 const cartMenuKeyboard = new Keyboard()
   .text('⬅️ Назад').text('🏠 Главное меню')
   .row()
-  .text('🗑 Удалить товар')
+  .text('🗑 Выкинуть из корзины')
   .row()
-  .text('📦 Оформить заказ')
+  .text('📦 Оформить заказ').text('🧹 Очистить корзину')
   .resized();
 
 export async function showCartConversation(
@@ -77,8 +77,8 @@ export async function showCartConversation(
       return;
     }
 
-    // === УДАЛИТЬ ТОВАР ===
-    if (text === '🗑 Удалить товар') {
+    // === ВЫКИНУТЬ ИЗ КОРЗИНЫ ===
+    if (text === '🗑 Выкинуть из корзины') {
       await ctx.reply(
         `🗑 Введите номер товара (1–${products.length}) или его ID для удаления из корзины:`,
         { reply_markup: backKeyboard },
@@ -125,6 +125,14 @@ export async function showCartConversation(
       continue; // Обновляем отображение корзины
     }
 
+    // === ОЧИСТИТЬ КОРЗИНУ ===
+    if (text === '🧹 Очистить корзину') {
+      conversation.external(() => cartService.clearCart(userId));
+      logger.info('Cart cleared', { userId });
+      await ctx.reply('🧹 Корзина очищена.', { reply_markup: mainMenuKeyboard });
+      return;
+    }
+
     // === ОФОРМИТЬ ЗАКАЗ ===
     if (text === '📦 Оформить заказ') {
       const currentCart = await conversation.external(() => cartService.getCart(userId));
@@ -137,18 +145,14 @@ export async function showCartConversation(
       const totalPrice = currentCart.reduce((sum, p) => sum + p.price, 0);
 
       try {
-        // Создаём заказ для первого товара (т.к. API создаёт заказ за один товар)
-        // или модифицируем логику если нужно создавать множественные заказы
-        const firstProduct = currentCart[0];
-        if (!firstProduct) {
-          await ctx.reply('🛒 Корзина пуста!', { reply_markup: mainMenuKeyboard });
-          return;
-        }
-
         const order = await conversation.external(() =>
           apiService.createOrder({
-            productId: firstProduct.id,
-            quantity: 1,
+            items: currentCart.map((p) => ({
+              productId: p.id,
+              quantity: 1,
+              price: p.price,
+              name: p.name,
+            })),
             totalPrice,
             telegramUserId: userId,
             paymentMethod: 'cash',

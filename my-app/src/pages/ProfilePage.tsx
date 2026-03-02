@@ -213,66 +213,69 @@ export function ProfilePage() {
                 )}
 
                 {!isLoading && !error && orders.length > 0 && (
-                  <div className="table-responsive">
-                    <table className="table table-hover">
-                      <thead className="table-light">
-                        <tr>
-                          <th>Фото</th>
-                          <th>Товар</th>
-                          <th>Размер</th>
-                          <th>Кол-во</th>
-                          <th>Цена</th>
-                          <th>Статус</th>
-                          <th>Дата</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {orders.map((order) => {
-                          const statusBadge = getStatusBadge(order.status);
-                          return (
-                            <tr key={order.id}>
-                              <td>
-                                {order.product?.image && (
-                                  <img
-                                    src={order.product.image}
-                                    alt={order.product.name}
-                                    style={{
-                                      width: '50px',
-                                      height: '50px',
-                                      objectFit: 'cover',
-                                      borderRadius: '4px',
-                                    }}
-                                  />
-                                )}
-                              </td>
-                              <td>
-                                <strong>{order.product?.name || 'Товар'}</strong>
-                              </td>
-                              <td>
-                                {order.product?.sizes && Array.isArray(order.product.sizes)
-                                  ? order.product.sizes[0] || '-'
-                                  : '-'}
-                              </td>
-                              <td>{order.quantity}</td>
-                              <td className="fw-bold text-danger">
-                                {order.totalPrice} ₽
-                              </td>
-                              <td>
-                                <span
-                                  className={`badge bg-${statusBadge.color}`}
-                                  style={{ fontSize: '0.85rem' }}
-                                >
-                                  {statusBadge.emoji} {statusBadge.text}
-                                </span>
-                              </td>
-                              <td className="text-muted small">
-                                {formatDate(order.createdAt)}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
+                  <div>
+                    {orders.map((order) => {
+                      const statusBadge = getStatusBadge(order.status);
+                      return (
+                        <div key={order.id} className="card mb-3 shadow-sm">
+                          <div className="card-header d-flex justify-content-between align-items-center">
+                            <span className="text-muted small">
+                              Заказ #{order.id.slice(0, 8)}… · {formatDate(order.createdAt)}
+                            </span>
+                            <span
+                              className={`badge bg-${statusBadge.color}`}
+                              style={{ fontSize: '0.85rem' }}
+                            >
+                              {statusBadge.emoji} {statusBadge.text}
+                            </span>
+                          </div>
+                          <div className="card-body p-0">
+                            <div className="table-responsive">
+                              <table className="table table-hover mb-0">
+                                <thead className="table-light">
+                                  <tr>
+                                    <th>Фото</th>
+                                    <th>Товар</th>
+                                    <th>Кол-во</th>
+                                    <th>Цена</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {order.items.map((item) => (
+                                    <tr key={item.id}>
+                                      <td>
+                                        {item.product?.image && (
+                                          <img
+                                            src={item.product.image}
+                                            alt={item.product.name}
+                                            style={{
+                                              width: '50px',
+                                              height: '50px',
+                                              objectFit: 'cover',
+                                              borderRadius: '4px',
+                                            }}
+                                          />
+                                        )}
+                                      </td>
+                                      <td>
+                                        <strong>{item.name || item.product?.name || 'Товар'}</strong>
+                                      </td>
+                                      <td>{item.quantity}</td>
+                                      <td className="fw-bold text-danger">
+                                        {item.price} ₽
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                          <div className="card-footer text-end fw-bold text-danger">
+                            Итого: {order.totalPrice} ₽
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>

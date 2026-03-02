@@ -131,11 +131,19 @@ export async function fetchSaleProducts(): Promise<Product[]> {
   return data.data.map(normalizeProduct);
 }
 
-export interface Order {
+export interface OrderItem {
   id: string;
+  orderId: string;
   productId: string;
   product?: Product;
   quantity: number;
+  price: number;
+  name: string;
+}
+
+export interface Order {
+  id: string;
+  items: OrderItem[];
   totalPrice: number;
   status: 'pending_payment' | 'paid' | 'delivered' | 'cancelled';
   paymentMethod: string;
@@ -146,8 +154,30 @@ export interface Order {
   updatedAt: string;
 }
 
+export interface CreateOrderItemPayload {
+  productId: string;
+  quantity?: number;
+  price: number;
+  name: string;
+}
+
+export interface CreateOrderPayload {
+  items: CreateOrderItemPayload[];
+  totalPrice: number;
+  telegramUserId?: string;
+  paymentMethod?: 'card' | 'cash';
+}
+
 export async function fetchMyOrders(): Promise<Order[]> {
   const { data } = await api.get<ApiResponse<Order[]>>('/orders/my');
+  if (!data.success || data.data === undefined) {
+    throw new Error(data.error ?? 'Unknown API error');
+  }
+  return data.data;
+}
+
+export async function createOrder(payload: CreateOrderPayload): Promise<Order> {
+  const { data } = await api.post<ApiResponse<Order>>('/orders', payload);
   if (!data.success || data.data === undefined) {
     throw new Error(data.error ?? 'Unknown API error');
   }

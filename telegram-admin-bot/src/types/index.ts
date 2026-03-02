@@ -66,11 +66,19 @@ export interface UpdateCategoryData {
 export type OrderStatus = 'pending_payment' | 'paid' | 'delivered' | 'cancelled';
 export type PaymentMethod = 'card' | 'cash';
 
-export interface Order {
+export interface OrderItem {
   id: string;
+  orderId: string;
   productId: string;
   product?: Product;
   quantity: number;
+  price: number;
+  name: string;
+}
+
+export interface Order {
+  id: string;
+  items: OrderItem[];
   totalPrice: number;
   status: OrderStatus;
   paymentMethod: PaymentMethod;
@@ -81,9 +89,15 @@ export interface Order {
   updatedAt: string;
 }
 
-export interface CreateOrderData {
+export interface CreateOrderItemData {
   productId: string;
   quantity?: number;
+  price: number;
+  name: string;
+}
+
+export interface CreateOrderData {
+  items: CreateOrderItemData[];
   totalPrice: number;
   telegramUserId?: string;
   paymentMethod?: PaymentMethod;

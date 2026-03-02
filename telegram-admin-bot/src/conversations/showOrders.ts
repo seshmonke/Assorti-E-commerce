@@ -23,13 +23,19 @@ const PAYMENT_METHOD_LABELS: Record<string, string> = {
 export function formatOrderCard(order: Order): string {
   const statusLabel = STATUS_LABELS[order.status as OrderStatus] ?? order.status;
   const paymentLabel = PAYMENT_METHOD_LABELS[order.paymentMethod] ?? order.paymentMethod;
-  const productName = order.product?.name ?? order.productId;
   const createdAt = new Date(order.createdAt).toLocaleString('ru-RU');
 
   let text = '🧾 <b>Заказ</b>\n\n';
   text += `🆔 ID: <code>${order.id}</code>\n`;
-  text += `📦 Товар: <b>${productName}</b>\n`;
-  text += `🔢 Количество: ${order.quantity} шт.\n`;
+
+  if (order.items && order.items.length > 0) {
+    text += `📦 <b>Товары (${order.items.length}):</b>\n`;
+    for (const item of order.items) {
+      const itemName = item.product?.name ?? item.name;
+      text += `  • ${itemName} × ${item.quantity} шт. — ${item.price} руб.\n`;
+    }
+  }
+
   text += `💰 Сумма: <b>${order.totalPrice} руб.</b>\n`;
   text += `💳 Оплата: ${paymentLabel}\n`;
   text += `📊 Статус: ${statusLabel}\n`;
@@ -48,9 +54,11 @@ function formatOrderList(orders: Order[]): string {
 
   const lines = orders.map((o, idx) => {
     const statusLabel = STATUS_LABELS[o.status as OrderStatus] ?? o.status;
-    const productName = o.product?.name ?? o.productId;
+    const firstItemName = o.items?.[0]?.name ?? '—';
+    const itemCount = o.items?.length ?? 0;
+    const itemsLabel = itemCount > 1 ? `${firstItemName} +${itemCount - 1}` : firstItemName;
     const shortId = o.id.slice(0, 8);
-    return `${idx + 1}. #${shortId} | ${productName} | ${o.totalPrice} руб. | ${statusLabel}`;
+    return `${idx + 1}. #${shortId} | ${itemsLabel} | ${o.totalPrice} руб. | ${statusLabel}`;
   });
 
   return `📦 <b>Список заказов (${orders.length})</b>\n\n<code>${lines.join('\n')}</code>`;

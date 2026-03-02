@@ -1,11 +1,13 @@
 import { type Conversation, type ConversationFlavor } from '@grammyjs/conversations';
 import { type Context, Keyboard } from 'grammy';
 import { apiService } from '../services/apiService';
+import { cartService } from '../services/cartService';
 import { mainMenuKeyboard, backKeyboard } from '../keyboards/mainMenu';
 import { logger } from '../utils/logger';
 import type { Product, Category } from '../types';
 import { formatOrderCard } from './showOrders';
 import { showOrdersConversation } from './showOrders';
+import { showCartConversation } from './showCart';
 
 type MyContext = ConversationFlavor<Context>;
 type MyConversation = Conversation<MyContext, MyContext>;
@@ -52,6 +54,8 @@ export const productActionKeyboard = new Keyboard()
   .text('⬅️ Назад').text('🏠 Главное меню')
   .row()
   .text('💰 Продажа').text('✏️ Редактировать товар')
+  .row()
+  .text('🛒 В корзину').text('🛒 Корзина')
   .row()
   .text('📦 Посмотреть заказы')
   .resized();
@@ -150,6 +154,37 @@ export async function editProductById(
       continue;
     }
 
+    // === В КОРЗИНУ ===
+    if (actionText === '🛒 В корзину') {
+      const userId = String(ctx.from?.id ?? '');
+      const alreadyInCart = conversation.external(() => cartService.isInCart(userId, product!.id));
+      if (await alreadyInCart) {
+        await ctx.reply(
+          `⚠️ Товар <b>${product!.name}</b> уже в корзине!`,
+          { parse_mode: 'HTML', reply_markup: productActionKeyboard },
+        );
+      } else {
+        conversation.external(() => cartService.addToCart(userId, product!));
+        logger.info('Product added to cart via product card', { productId: product!.id, userId });
+        await ctx.reply(
+          `✅ Товар <b>${product!.name}</b> добавлен в корзину!\n\nПерейдите в корзину для оформления заказа.`,
+          { parse_mode: 'HTML', reply_markup: productActionKeyboard },
+        );
+      }
+      continue;
+    }
+
+    // === КОРЗИНА (перейти в меню корзины) ===
+    if (actionText === '🛒 Корзина') {
+      await showCartConversation(conversation, ctx);
+      // После возврата из корзины показываем карточку товара снова
+      await ctx.reply(formatProductCard(product!), {
+        parse_mode: 'HTML',
+        reply_markup: productActionKeyboard,
+      });
+      continue;
+    }
+
     // === ПОСМОТРЕТЬ ЗАКАЗЫ ===
     if (actionText === '📦 Посмотреть заказы') {
       const result = await showOrdersConversation(conversation, ctx);
@@ -175,8 +210,7 @@ async function handleSale(
     // Создаём заказ с оплатой наличными
     const order = await conversation.external(() =>
       apiService.createOrder({
-        productId: product.id,
-        quantity: 1,
+        items: [{ productId: product.id, quantity: 1, price: product.price, name: product.name }],
         totalPrice: product.price,
         telegramUserId: String(ctx.from?.id ?? ''),
         paymentMethod: 'cash',

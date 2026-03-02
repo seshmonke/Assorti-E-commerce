@@ -1,13 +1,23 @@
 import { prisma } from '../lib/prisma.js';
 import type { CreateOrderDTO, UpdateOrderStatusDTO, IOrder, OrderStatus } from '../types/index.js';
 
+const orderInclude = {
+    items: {
+        include: {
+            product: {
+                include: { category: true },
+            },
+        },
+    },
+} as const;
+
 export class OrderModel {
     /**
      * Получить все заказы
      */
     static async findAll(): Promise<IOrder[]> {
         return prisma.order.findMany({
-            include: { product: { include: { category: true } } },
+            include: orderInclude,
             orderBy: { createdAt: 'desc' },
         }) as unknown as IOrder[];
     }
@@ -18,7 +28,7 @@ export class OrderModel {
     static async findById(id: string): Promise<IOrder | null> {
         return prisma.order.findUnique({
             where: { id },
-            include: { product: { include: { category: true } } },
+            include: orderInclude,
         }) as unknown as IOrder | null;
     }
 
@@ -28,7 +38,7 @@ export class OrderModel {
     static async findByStatus(status: OrderStatus): Promise<IOrder[]> {
         return prisma.order.findMany({
             where: { status },
-            include: { product: { include: { category: true } } },
+            include: orderInclude,
             orderBy: { createdAt: 'desc' },
         }) as unknown as IOrder[];
     }
@@ -39,30 +49,36 @@ export class OrderModel {
     static async findByTelegramUserId(telegramUserId: string): Promise<IOrder[]> {
         return prisma.order.findMany({
             where: { telegramUserId },
-            include: { product: { include: { category: true } } },
+            include: orderInclude,
             orderBy: { createdAt: 'desc' },
         }) as unknown as IOrder[];
     }
 
     /**
-     * Создать новый заказ
+     * Создать новый заказ с массивом товаров
      */
     static async create(data: CreateOrderDTO): Promise<IOrder> {
         return prisma.order.create({
             data: {
-                productId: data.productId,
-                quantity: data.quantity ?? 1,
                 totalPrice: data.totalPrice,
                 telegramUserId: data.telegramUserId ?? null,
                 paymentMethod: data.paymentMethod ?? 'card',
                 status: 'pending_payment',
+                items: {
+                    create: data.items.map((item) => ({
+                        productId: item.productId,
+                        quantity: item.quantity ?? 1,
+                        price: item.price,
+                        name: item.name,
+                    })),
+                },
             },
-            include: { product: { include: { category: true } } },
+            include: orderInclude,
         }) as unknown as IOrder;
     }
 
     /**
-     * Обновить статус заказа
+     * Обновить ста��ус заказа
      */
     static async updateStatus(id: string, data: UpdateOrderStatusDTO): Promise<IOrder> {
         return prisma.order.update({
@@ -72,7 +88,7 @@ export class OrderModel {
                 ...(data.paymentId !== undefined ? { paymentId: data.paymentId } : {}),
                 ...(data.confirmationUrl !== undefined ? { confirmationUrl: data.confirmationUrl } : {}),
             },
-            include: { product: { include: { category: true } } },
+            include: orderInclude,
         }) as unknown as IOrder;
     }
 
@@ -82,7 +98,7 @@ export class OrderModel {
     static async findByPaymentId(paymentId: string): Promise<IOrder | null> {
         return prisma.order.findFirst({
             where: { paymentId },
-            include: { product: { include: { category: true } } },
+            include: orderInclude,
         }) as unknown as IOrder | null;
     }
 
@@ -92,7 +108,7 @@ export class OrderModel {
     static async delete(id: string): Promise<IOrder> {
         return prisma.order.delete({
             where: { id },
-            include: { product: { include: { category: true } } },
+            include: orderInclude,
         }) as unknown as IOrder;
     }
 }

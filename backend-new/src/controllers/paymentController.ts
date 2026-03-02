@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import { paymentService } from '../services/paymentService.js';
 import { OrderModel } from '../models/orderModel.js';
-import { ProductModel } from '../models/productModel.js';
+import { prisma } from '../lib/prisma.js';
 import type { ApiResponse } from '../types/index.js';
 
 export class PaymentController {
@@ -41,8 +41,9 @@ export class PaymentController {
                 return;
             }
 
-            const productName = order.product?.name ?? 'Товар';
-            const description = `Оплата заказа #${order.id.slice(0, 8)} — ${productName}`;
+            // Формируем описание из всех товаров в заказе
+            const itemNames = order.items.map((item) => item.name).join(', ');
+            const description = `Оплата заказа #${order.id.slice(0, 8)} — ${itemNames}`;
 
             const result = await paymentService.createPayment(
                 order.id,
@@ -106,7 +107,7 @@ export class PaymentController {
     /**
      * GET /api/payments/check/:orderId
      * Проверяет статус платежа по orderId.
-     * Если оплачен — обновляет заказ и удаляет товар.
+     * Если оплачен — обновляет заказ и удаляет все товары из заказа.
      */
     static async checkPayment(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
@@ -137,11 +138,14 @@ export class PaymentController {
                     paymentId: payment.id,
                 });
 
-                // Удаляем товар из БД
-                try {
-                    await ProductModel.delete(order.productId);
-                } catch {
-                    // Товар мог быть уже удалён
+                // Удаляем все товары из заказа из БД
+                const productIds = order.items.map((item) => item.productId);
+                for (const productId of productIds) {
+                    try {
+                        await prisma.product.delete({ where: { id: productId } });
+                    } catch {
+                        // Товар мог быть уже удалён
+                    }
                 }
 
                 message = 'Payment confirmed — order marked as paid';
@@ -192,11 +196,14 @@ export class PaymentController {
                 if (order && order.status !== 'paid') {
                     await OrderModel.updateStatus(order.id, { status: 'paid', paymentId });
 
-                    // Удаляем товар из БД
-                    try {
-                        await ProductModel.delete(order.productId);
-                    } catch {
-                        // Товар мог быть уже удалён
+                    // Удаляем все товары из заказа из БД
+                    const productIds = order.items.map((item) => item.productId);
+                    for (const productId of productIds) {
+                        try {
+                            await prisma.product.delete({ where: { id: productId } });
+                        } catch {
+                            // Товар мог быть уже удалён
+                        }
                     }
 
                     console.log(`Order ${order.id} marked as paid (payment: ${paymentId})`);

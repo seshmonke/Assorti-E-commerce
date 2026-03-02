@@ -81,7 +81,7 @@ function App() {
 
   return (
     <div className="d-flex flex-column min-vh-100 sofia-sans-condensed-font text-left">
-      <nav className="navbar navbar-expand-lg bg-danger">
+      <nav className="navbar navbar-expand-lg bg-danger position-relative">
         <div className="container-fluid">
           <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
             <span className="navbar-toggler-icon"></span>
@@ -137,7 +137,7 @@ function App() {
             </ul>
           </div>
 
-          <div className="d-flex gap-3 ms-auto" style={{ alignItems: 'center' }}>
+          <div className="d-flex gap-3 align-items-center">
             <Link to="/profile" className="btn btn-light">
               👤 Профиль
             </Link>

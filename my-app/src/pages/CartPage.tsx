@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { clearCart } from '../store/cartSlice';
+import { createOrder } from '../services/api';
 
 interface OrderForm {
   firstName: string;
@@ -17,6 +18,7 @@ export function CartPage() {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { items, totalPrice } = useAppSelector((state) => state.cart);
+  const { user } = useAppSelector((state) => state.auth);
   const [formData, setFormData] = useState<OrderForm>({
     firstName: '',
     lastName: '',
@@ -28,6 +30,8 @@ export function CartPage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
+  const [orderId, setOrderId] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Расчёт цены без скидки и общей суммы скидки
   const calculatePriceWithoutDiscount = (item: typeof items[0]): number => {
@@ -75,13 +79,35 @@ export function CartPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setSubmitError(null);
 
-    // Имитация отправки заказа на сервер
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      const orderItems = items.map((item) => ({
+        productId: item.id,
+        quantity: item.quantity,
+        price: item.price,
+        name: item.name,
+      }));
+
+      const order = await createOrder({
+        items: orderItems,
+        totalPrice,
+        telegramUserId: user?.telegramId,
+        paymentMethod: 'card',
+      });
+
+      setOrderId(order.id);
       setOrderPlaced(true);
       dispatch(clearCart());
-    }, 1500);
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.error ??
+        error?.message ??
+        'Ошибка при оформлении заказа. Попробуйте ещё раз.';
+      setSubmitError(message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (orderPlaced) {
@@ -91,11 +117,11 @@ export function CartPage() {
           <div className="alert alert-success" role="alert">
             <h4 className="alert-heading">✓ Заказ успешно оформлен!</h4>
             <p>
-              Спасибо за ваш заказ. Мы отправим подтверждение на ваш email.
+              Спасибо за ваш заказ. Мы свяжемся с вами для подтверждения.
             </p>
             <hr />
             <p className="mb-0">
-              Номер заказа: <strong>#ORD-{Date.now()}</strong>
+              Номер заказа: <strong>#{orderId?.slice(0, 8).toUpperCase()}</strong>
             </p>
           </div>
 
@@ -116,6 +142,12 @@ export function CartPage() {
     <main className="flex-grow-1 py-4">
       <div className="container">
         <h1 className="mb-4">Оформление заказа</h1>
+
+        {submitError && (
+          <div className="alert alert-danger" role="alert">
+            {submitError}
+          </div>
+        )}
 
         <div className="row">
           {/* Форма */}

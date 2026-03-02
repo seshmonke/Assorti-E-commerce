@@ -21,35 +21,44 @@ model User {
 }
 
 model Product {
-  id                String     @id @default(uuid())
+  id                String      @id @default(uuid())
   name              String
   price             Int
   image             String
   categoryId        String
-  category          Category   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  category          Category    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   description       String
   sizes             Json
   composition       Json
   discount          Int?
-  archive           Boolean    @default(false)
-  orders            Order[]
-  createdAt         DateTime   @default(now())
-  updatedAt         DateTime   @updatedAt
+  archive           Boolean     @default(false)
+  orderItems        OrderItem[]
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+}
+
+model OrderItem {
+  id        String  @id @default(uuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity  Int     @default(1)
+  price     Int
+  name      String
 }
 
 model Order {
-  id              String   @id @default(uuid())
-  productId       String
-  product         Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  quantity        Int      @default(1)
+  id              String      @id @default(uuid())
+  items           OrderItem[]
   totalPrice      Int
-  status          String   @default("pending_payment")
-  paymentMethod   String   @default("card")
+  status          String      @default("pending_payment")
+  paymentMethod   String      @default("card")
   paymentId       String?
   confirmationUrl String?
   telegramUserId  String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 }
 
 model Category {
