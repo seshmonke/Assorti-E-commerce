@@ -8,7 +8,8 @@ export class PaymentController {
     /**
      * POST /api/payments/create
      * Создаёт платёж в ЮKassa для указанного заказа.
-     * Возвращает confirmationUrl — URL для генерации QR-кода.
+     * Возвращает confirmationToken для виджета ЮKassa (embedded).
+     * Не требует авторизации — orderId передаётся в body.
      */
     static async createPayment(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
@@ -33,21 +34,16 @@ export class PaymentController {
                 return;
             }
 
-            if (order.paymentMethod !== 'card') {
-                res.status(400).json({
-                    success: false,
-                    error: 'Payment via QR is only available for card payment method',
-                });
-                return;
-            }
-
             // Формируем описание из всех товаров в заказе
             const itemNames = order.items.map((item) => item.name).join(', ');
             const description = `Оплата заказа #${order.id.slice(0, 8)} — ${itemNames}`;
 
+            // Сумма = товары + доставка
+            const totalWithDelivery = order.totalPrice + (order.deliveryPrice ?? 0);
+
             const result = await paymentService.createPayment(
                 order.id,
-                order.totalPrice * 100,
+                totalWithDelivery * 100, // в копейках
                 description,
             );
 
@@ -64,18 +60,19 @@ export class PaymentController {
                 message: 'Payment created successfully',
             };
             res.json(response);
-        } catch (error: any) {
-            console.error('[PaymentController] createPayment error:', {
-                message: error?.message,
-                yooStatus: error?.response?.status,
-                yooData: error?.response?.data,
-            });
+        } catch (error: unknown) {
+            console.error('[PaymentController] createPayment error:', error);
 
-            const yooStatus = error?.response?.status;
-            const yooData = error?.response?.data;
+            const err = error as {
+                message?: string;
+                response?: { status?: number; data?: unknown };
+            };
 
-            if (error?.message?.includes('YOOKASSA_SHOP_ID')) {
-                res.status(500).json({ success: false, error: error.message });
+            const yooStatus = err?.response?.status;
+            const yooData = err?.response?.data;
+
+            if (err?.message?.includes('YOOKASSA_SHOP_ID')) {
+                res.status(500).json({ success: false, error: err.message });
                 return;
             }
             if (yooStatus === 401) {
@@ -107,7 +104,7 @@ export class PaymentController {
     /**
      * GET /api/payments/check/:orderId
      * Проверяет статус платежа по orderId.
-     * Если оплачен — обновляет заказ и удаляет все товары из заказа.
+     * Если оплачен — обновляет заказ.
      */
     static async checkPayment(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
@@ -132,22 +129,10 @@ export class PaymentController {
             let message = 'Payment status checked';
 
             if (payment.status === 'succeeded' && order.status !== 'paid') {
-                // Обновляем статус заказа
                 await OrderModel.updateStatus(order.id, {
                     status: 'paid',
                     paymentId: payment.id,
                 });
-
-                // Удаляем все товары из заказа из БД
-                const productIds = order.items.map((item) => item.productId);
-                for (const productId of productIds) {
-                    try {
-                        await prisma.product.delete({ where: { id: productId } });
-                    } catch {
-                        // Товар мог быть уже удалён
-                    }
-                }
-
                 message = 'Payment confirmed — order marked as paid';
             }
 
@@ -195,17 +180,6 @@ export class PaymentController {
 
                 if (order && order.status !== 'paid') {
                     await OrderModel.updateStatus(order.id, { status: 'paid', paymentId });
-
-                    // Удаляем все товары из заказа из БД
-                    const productIds = order.items.map((item) => item.productId);
-                    for (const productId of productIds) {
-                        try {
-                            await prisma.product.delete({ where: { id: productId } });
-                        } catch {
-                            // Товар мог быть уже удалён
-                        }
-                    }
-
                     console.log(`Order ${order.id} marked as paid (payment: ${paymentId})`);
                 }
             }

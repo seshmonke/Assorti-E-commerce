@@ -20,6 +20,20 @@ model User {
   updatedAt         DateTime @updatedAt
 }
 
+model BrowserUser {
+  id         String   @id @default(uuid())
+  telegramId String?
+  name       String
+  phone      String
+  email      String?
+  telegram   String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  orders     Order[]
+
+  @@map("browser_users")
+}
+
 model Product {
   id                String      @id @default(uuid())
   name              String
@@ -49,16 +63,23 @@ model OrderItem {
 }
 
 model Order {
-  id              String      @id @default(uuid())
-  items           OrderItem[]
-  totalPrice      Int
-  status          String      @default("pending_payment")
-  paymentMethod   String      @default("card")
-  paymentId       String?
-  confirmationUrl String?
-  telegramUserId  String?
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  id                 String       @id @default(uuid())
+  items              OrderItem[]
+  totalPrice         Int
+  status             String       @default("pending_payment")
+  paymentMethod      String       @default("card")
+  paymentId          String?
+  confirmationUrl    String?
+  telegramUserId     String?
+  userId             String?
+  user               BrowserUser? @relation(fields: [userId], references: [id])
+  deliveryCity       String?
+  deliveryPvzCode    String?
+  deliveryPvzAddress String?
+  deliveryPrice      Int?
+  trackNumber        String?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
 }
 
 model Category {

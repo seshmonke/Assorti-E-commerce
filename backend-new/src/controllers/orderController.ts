@@ -57,7 +57,7 @@ export class OrderController {
     }
 
     /**
-     * GET /api/orders/:id - Получить заказ по ID
+     * GET /api/orders/:id - Получить заказ по ID (без авторизации — для страницы заказа)
      */
     static async getOrderById(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
@@ -84,7 +84,9 @@ export class OrderController {
 
     /**
      * POST /api/orders - Создать новый заказ
-     * Принимает массив товаров (items), атомарно помечает все товары как архивные
+     * Принимает массив товаров (items), browserUserId, данные доставки.
+     * Атомарно помечает все товары как архивные.
+     * Не требует Telegram авторизации — browserUser уже зарегистрирован.
      */
     static async createOrder(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
@@ -156,6 +158,11 @@ export class OrderController {
                         telegramUserId: data.telegramUserId ?? null,
                         paymentMethod: data.paymentMethod ?? 'card',
                         status: 'pending_payment',
+                        userId: data.userId ?? null,
+                        deliveryCity: data.deliveryCity ?? null,
+                        deliveryPvzCode: data.deliveryPvzCode ?? null,
+                        deliveryPvzAddress: data.deliveryPvzAddress ?? null,
+                        deliveryPrice: data.deliveryPrice ?? null,
                         items: {
                             create: enrichedItems,
                         },
@@ -166,6 +173,7 @@ export class OrderController {
                                 product: { include: { category: true } },
                             },
                         },
+                        user: true,
                     },
                 });
 
@@ -229,7 +237,6 @@ export class OrderController {
 
     /**
      * POST /api/orders/:id/cancel - Отменить заказ
-     * Атомарно ставит статус cancelled
      */
     static async cancelOrder(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
@@ -303,6 +310,7 @@ export class OrderController {
                                 product: { include: { category: true } },
                             },
                         },
+                        user: true,
                     },
                 });
 

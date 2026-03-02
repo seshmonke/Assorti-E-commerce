@@ -23,6 +23,8 @@ export interface CreatePaymentResult {
     paymentId: string;
     /** URL для генерации QR-кода (СБП / ЮMoney) */
     confirmationUrl: string;
+    /** Токен для виджета ЮKassa (embedded) */
+    confirmationToken: string;
     status: string;
 }
 
@@ -42,7 +44,8 @@ export class PaymentService {
     }
 
     /**
-     * Создать платёж в ЮKassa с QR-кодом (confirmation type = "qr")
+     * Создать платёж в ЮKassa с виджетом (confirmation type = "embedded")
+     * Возвращает confirmation_token для инициализации виджета на фронтенде.
      * @param orderId - ID заказа
      * @param amount - сумма в копейках
      * @param description - описание
@@ -64,7 +67,7 @@ export class PaymentService {
                 currency: 'RUB',
             },
             confirmation: {
-                type: 'qr',
+                type: 'embedded',
             },
             capture: true,
             description,
@@ -93,6 +96,7 @@ export class PaymentService {
         return {
             paymentId: payment.id,
             confirmationUrl: payment.confirmation.confirmation_url ?? '',
+            confirmationToken: payment.confirmation.confirmation_token ?? '',
             status: payment.status,
         };
     }

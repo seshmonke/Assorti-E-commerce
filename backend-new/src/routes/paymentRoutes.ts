@@ -4,11 +4,11 @@ import { authMiddleware } from '../middleware/auth.js';
 
 const router = Router();
 
-// Создать платёж и получить QR URL
-router.post('/create', authMiddleware, PaymentController.createPayment);
+// Создать платёж — без авторизации (browserUser flow)
+router.post('/create', PaymentController.createPayment);
 
-// Проверить статус оплаты заказа
-router.get('/check/:orderId', authMiddleware, PaymentController.checkPayment);
+// Проверить статус оплаты заказа — без авторизации
+router.get('/check/:orderId', PaymentController.checkPayment);
 
 // Вебхук от ЮKassa (без авторизации — ЮKassa шлёт сама)
 router.post('/webhook', PaymentController.handleWebhook);

@@ -65,6 +65,7 @@ interface ApiResponse<T> {
   success: boolean;
   data?: T;
   error?: string;
+  message?: string;
 }
 
 /**
@@ -131,6 +132,107 @@ export async function fetchSaleProducts(): Promise<Product[]> {
   return data.data.map(normalizeProduct);
 }
 
+// ─── BrowserUser ────────────────────────────────────────────────────────────
+
+export interface BrowserUser {
+  id: string;
+  telegramId: string | null;
+  name: string;
+  phone: string;
+  email: string | null;
+  telegram: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RegisterBrowserUserPayload {
+  telegramId?: string;
+  name: string;
+  phone: string;
+  email?: string;
+  telegram?: string;
+}
+
+export async function registerBrowserUser(payload: RegisterBrowserUserPayload): Promise<BrowserUser> {
+  const { data } = await api.post<ApiResponse<BrowserUser>>('/browser-users/register', payload);
+  if (!data.success || data.data === undefined) {
+    throw new Error(data.error ?? 'Unknown API error');
+  }
+  return data.data;
+}
+
+// ─── CDEK ───────────────────────────────────────────���────────────────────���───
+
+export interface CdekCity {
+  code: number;
+  city: string;
+  region: string;
+  country_code: string;
+  full_name: string;
+}
+
+export interface CdekPvz {
+  code: string;
+  name: string;
+  location: {
+    address: string;
+    city: string;
+    region: string;
+    latitude: number;
+    longitude: number;
+  };
+  work_time: string;
+  phones?: Array<{ number: string }>;
+  type: string;
+  is_handout: boolean;
+  is_reception: boolean;
+}
+
+export interface CdekDeliveryCalc {
+  tariff_code: number;
+  tariff_name: string;
+  delivery_sum: number;
+  period_min: number;
+  period_max: number;
+  weight_calc: number;
+}
+
+export async function searchCdekCities(query: string): Promise<CdekCity[]> {
+  const { data } = await api.get<ApiResponse<CdekCity[]>>('/cdek/cities', {
+    params: { query },
+  });
+  if (!data.success || data.data === undefined) {
+    throw new Error(data.error ?? 'Unknown API error');
+  }
+  return data.data;
+}
+
+export async function fetchCdekPvz(cityCode: number): Promise<CdekPvz[]> {
+  const { data } = await api.get<ApiResponse<CdekPvz[]>>('/cdek/pvz', {
+    params: { city_code: cityCode },
+  });
+  if (!data.success || data.data === undefined) {
+    throw new Error(data.error ?? 'Unknown API error');
+  }
+  return data.data;
+}
+
+export async function calcCdekDelivery(cityCode: number, weight?: number): Promise<{
+  tariffs: CdekDeliveryCalc[];
+  recommended: CdekDeliveryCalc | undefined;
+}> {
+  const { data } = await api.post<ApiResponse<{
+    tariffs: CdekDeliveryCalc[];
+    recommended: CdekDeliveryCalc | undefined;
+  }>>('/cdek/calc', { city_code: cityCode, weight });
+  if (!data.success || data.data === undefined) {
+    throw new Error(data.error ?? 'Unknown API error');
+  }
+  return data.data;
+}
+
+// ─── Orders ──────────────────────────────────────────────────────────────────
+
 export interface OrderItem {
   id: string;
   orderId: string;
@@ -150,6 +252,13 @@ export interface Order {
   paymentId: string | null;
   confirmationUrl: string | null;
   telegramUserId: string | null;
+  userId: string | null;
+  user?: BrowserUser | null;
+  deliveryCity: string | null;
+  deliveryPvzCode: string | null;
+  deliveryPvzAddress: string | null;
+  deliveryPrice: number | null;
+  trackNumber: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -166,6 +275,11 @@ export interface CreateOrderPayload {
   totalPrice: number;
   telegramUserId?: string;
   paymentMethod?: 'card' | 'cash';
+  userId?: string;
+  deliveryCity?: string;
+  deliveryPvzCode?: string;
+  deliveryPvzAddress?: string;
+  deliveryPrice?: number;
 }
 
 export async function fetchMyOrders(): Promise<Order[]> {
@@ -176,8 +290,46 @@ export async function fetchMyOrders(): Promise<Order[]> {
   return data.data;
 }
 
+export async function fetchOrderById(id: string): Promise<Order> {
+  const { data } = await api.get<ApiResponse<Order>>(`/orders/${id}`);
+  if (!data.success || data.data === undefined) {
+    throw new Error(data.error ?? 'Unknown API error');
+  }
+  return data.data;
+}
+
 export async function createOrder(payload: CreateOrderPayload): Promise<Order> {
   const { data } = await api.post<ApiResponse<Order>>('/orders', payload);
+  if (!data.success || data.data === undefined) {
+    throw new Error(data.error ?? 'Unknown API error');
+  }
+  return data.data;
+}
+
+// ─── Payments ────────────────────────────────────────────────────────────────
+
+export interface CreatePaymentResult {
+  paymentId: string;
+  confirmationUrl: string;
+  confirmationToken: string;
+  status: string;
+}
+
+export async function createPayment(orderId: string): Promise<CreatePaymentResult> {
+  const { data } = await api.post<ApiResponse<CreatePaymentResult>>('/payments/create', { orderId });
+  if (!data.success || data.data === undefined) {
+    throw new Error(data.error ?? 'Unknown API error');
+  }
+  return data.data;
+}
+
+export async function checkPaymentStatus(orderId: string): Promise<{
+  paymentStatus: string;
+  orderStatus: string;
+}> {
+  const { data } = await api.get<ApiResponse<{ paymentStatus: string; orderStatus: string }>>(
+    `/payments/check/${orderId}`,
+  );
   if (!data.success || data.data === undefined) {
     throw new Error(data.error ?? 'Unknown API error');
   }

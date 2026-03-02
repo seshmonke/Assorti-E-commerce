@@ -79,6 +79,25 @@ export interface CreateOrderItemDTO {
     name: string;
 }
 
+export interface IBrowserUser {
+    id: string;
+    telegramId: string | null;
+    name: string;
+    phone: string;
+    email: string | null;
+    telegram: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export interface CreateBrowserUserDTO {
+    telegramId?: string;
+    name: string;
+    phone: string;
+    email?: string;
+    telegram?: string;
+}
+
 export interface IOrder {
     id: string;
     items: IOrderItem[];
@@ -88,6 +107,13 @@ export interface IOrder {
     paymentId: string | null;
     confirmationUrl: string | null;
     telegramUserId: string | null;
+    userId: string | null;
+    user?: IBrowserUser | null;
+    deliveryCity: string | null;
+    deliveryPvzCode: string | null;
+    deliveryPvzAddress: string | null;
+    deliveryPrice: number | null;
+    trackNumber: string | null;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -97,12 +123,20 @@ export interface CreateOrderDTO {
     totalPrice: number;
     telegramUserId?: string;
     paymentMethod?: PaymentMethod;
+    // browserUser данные
+    userId?: string;
+    // delivery данные
+    deliveryCity?: string;
+    deliveryPvzCode?: string;
+    deliveryPvzAddress?: string;
+    deliveryPrice?: number;
 }
 
 export interface UpdateOrderStatusDTO {
     status: OrderStatus;
     paymentId?: string;
     confirmationUrl?: string;
+    trackNumber?: string;
 }
 
 export interface IUser {

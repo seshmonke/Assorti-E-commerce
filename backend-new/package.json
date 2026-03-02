@@ -34,7 +34,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && rm -rf dist/generated && cp -r generated dist/generated",
     "start": "node dist/src/index.js",
     "dev": "tsx watch src/index.ts",
     "lint": "eslint .",

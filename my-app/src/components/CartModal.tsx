@@ -184,7 +184,7 @@ export function CartModal({ isOpen, onClose }: CartModalProps) {
                 </button>
                 {items.length > 0 && (
                   <Link
-                    to="/checkout"
+                    to="/cart"
                     className="btn btn-danger"
                     onClick={onClose}
                   >

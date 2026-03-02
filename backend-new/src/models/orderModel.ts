@@ -9,6 +9,7 @@ const orderInclude = {
             },
         },
     },
+    user: true,
 } as const;
 
 export class OrderModel {
@@ -64,6 +65,11 @@ export class OrderModel {
                 telegramUserId: data.telegramUserId ?? null,
                 paymentMethod: data.paymentMethod ?? 'card',
                 status: 'pending_payment',
+                userId: data.userId ?? null,
+                deliveryCity: data.deliveryCity ?? null,
+                deliveryPvzCode: data.deliveryPvzCode ?? null,
+                deliveryPvzAddress: data.deliveryPvzAddress ?? null,
+                deliveryPrice: data.deliveryPrice ?? null,
                 items: {
                     create: data.items.map((item) => ({
                         productId: item.productId,
@@ -78,7 +84,7 @@ export class OrderModel {
     }
 
     /**
-     * Обновить ста��ус заказа
+     * Обновить статус заказа
      */
     static async updateStatus(id: string, data: UpdateOrderStatusDTO): Promise<IOrder> {
         return prisma.order.update({
@@ -87,6 +93,7 @@ export class OrderModel {
                 status: data.status,
                 ...(data.paymentId !== undefined ? { paymentId: data.paymentId } : {}),
                 ...(data.confirmationUrl !== undefined ? { confirmationUrl: data.confirmationUrl } : {}),
+                ...(data.trackNumber !== undefined ? { trackNumber: data.trackNumber } : {}),
             },
             include: orderInclude,
         }) as unknown as IOrder;

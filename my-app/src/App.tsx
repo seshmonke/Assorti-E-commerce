@@ -7,9 +7,11 @@ import { loadCategories } from './store/categorySlice'
 import { signIn, setInitialized } from './store/authSlice'
 import { HomePage } from './pages/HomePage'
 import { CategoryPage } from './pages/CategoryPage'
-import { CartPage } from './pages/CartPage'
+import CartPage from './pages/CartPage'
 import { ProductPage } from './pages/ProductPage'
 import { ProfilePage } from './pages/ProfilePage'
+import PaymentPage from './pages/PaymentPage'
+import OrderPage from './pages/OrderPage'
 import { CartModal } from './components/CartModal'
 import { logger } from './utils/logger'
 
@@ -165,7 +167,10 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/category/:categoryId" element={<CategoryPage />} />
         <Route path="/product/:id" element={<ProductPage />} />
+        <Route path="/cart" element={<CartPage />} />
         <Route path="/checkout" element={<CartPage />} />
+        <Route path="/payment" element={<PaymentPage />} />
+        <Route path="/order/:id" element={<OrderPage />} />
         <Route path="/profile" element={<ProfilePage />} />
       </Routes>
 

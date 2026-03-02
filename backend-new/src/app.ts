@@ -6,6 +6,8 @@ import categoryRoutes from './routes/categoryRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import authRoutes from './routes/authRoutes.js';
+import browserUserRoutes from './routes/browserUserRoutes.js';
+import cdekRoutes from './routes/cdekRoutes.js';
 import { logger } from './middleware/logger.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
@@ -32,6 +34,8 @@ export function buildApp() {
     app.use('/api/categories', categoryRoutes);
     app.use('/api/orders', orderRoutes);
     app.use('/api/payments', paymentRoutes);
+    app.use('/api/browser-users', browserUserRoutes);
+    app.use('/api/cdek', cdekRoutes);
 
     // Health check
     app.get('/api/health', (_req, res) => {
