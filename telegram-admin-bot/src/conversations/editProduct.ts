@@ -5,7 +5,6 @@ import { cartService } from '../services/cartService';
 import { mainMenuKeyboard, backKeyboard } from '../keyboards/mainMenu';
 import { logger } from '../utils/logger';
 import type { Product, Category } from '../types';
-import { formatOrderCard } from './showOrders';
 import { showOrdersConversation } from './showOrders';
 import { showCartConversation } from './showCart';
 import { generateLabelImage } from '../services/labelService';
@@ -54,7 +53,7 @@ export function formatProductCard(product: Product): string {
 export const productActionKeyboard = new Keyboard()
   .text('⬅️ Назад').text('🏠 Главное меню')
   .row()
-  .text('💰 Продажа').text('✏️ Редактировать товар')
+  .text('✏️ Редактировать товар')
   .row()
   .text('🛒 В корзину').text('🛒 Корзина')
   .row()
@@ -127,18 +126,6 @@ export async function editProductById(
     if (actionText === '🏠 Главное меню') {
       await ctx.reply('Главное меню', { reply_markup: mainMenuKeyboard });
       return 'done';
-    }
-
-    // === ПРОДАЖА ===
-    if (actionText === '💰 Продажа') {
-      const result = await handleSale(conversation, ctx, product!);
-      if (result === 'done') return 'done';
-      // После продажи возвращаемся к меню товара
-      await ctx.reply(formatProductCard(product!), {
-        parse_mode: 'HTML',
-        reply_markup: productActionKeyboard,
-      });
-      continue;
     }
 
     // === РЕДАКТИРОВАТЬ ===
@@ -222,59 +209,6 @@ export async function editProductById(
       continue;
     }
   }
-}
-
-/**
- * Обрабатывает продажу товара — создаёт заказ с оплатой наличными
- */
-async function handleSale(
-  conversation: MyConversation,
-  ctx: MyContext,
-  product: Product,
-): Promise<'back' | 'done'> {
-  try {
-    // Создаём заказ с оплатой наличными
-    const order = await conversation.external(() =>
-      apiService.createOrder({
-        items: [{ productId: product.id, quantity: 1, price: product.price, name: product.name }],
-        totalPrice: product.price,
-        telegramUserId: String(ctx.from?.id ?? ''),
-        paymentMethod: 'cash',
-      }),
-    );
-    logger.info('Order created via bot (cash)', { orderId: order.id, productId: product.id });
-
-    // Получаем полную информацию о заказе с привязанным товаром
-    const fullOrder = await conversation.external(() => apiService.getOrderById(order.id));
-
-    if (fullOrder) {
-      // Показываем красивую карточку заказа
-      await ctx.reply(
-        `✅ <b>Заказ создан!</b>\n\n${formatOrderCard(fullOrder)}\n\nКогда клиент оплатит — найдите заказ и отметьте его оплаченным.`,
-        { parse_mode: 'HTML', reply_markup: productActionKeyboard },
-      );
-    } else {
-      // Fallback если не получили полную информацию
-      await ctx.reply(
-        `✅ <b>Заказ создан!</b>\n\n` +
-        `🆔 ID заказа: <code>${order.id}</code>\n` +
-        `📦 Товар: <b>${product.name}</b>\n` +
-        `💰 Сумма: <b>${order.totalPrice} руб.</b>\n` +
-        `💵 Оплата: Наличными\n` +
-        `📊 Статус: ⏳ Ожидает оплаты\n\n` +
-        `Когда клиент оплатит — найдите заказ и отметьте его оплаченным.`,
-        { parse_mode: 'HTML', reply_markup: productActionKeyboard },
-      );
-    }
-  } catch (err: any) {
-    logger.error('Failed to create order via bot', { err });
-    const errorMsg = err?.response?.data?.error ?? err?.message ?? 'неизвестная ошибка';
-    await ctx.reply(
-      `⚠️ Ошибка при создании заказа: ${errorMsg}`,
-      { reply_markup: productActionKeyboard },
-    );
-  }
-  return 'back';
 }
 
 /**

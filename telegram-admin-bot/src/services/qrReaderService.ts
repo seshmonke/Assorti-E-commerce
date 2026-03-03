@@ -1,5 +1,5 @@
 import { Jimp } from 'jimp';
-import { BrowserQRCodeReader, BinaryBitmap, HybridBinarizer, RGBLuminanceSource } from '@zxing/library';
+import jsQR from 'jsqr';
 import { logger } from '../utils/logger';
 
 /**
@@ -37,42 +37,50 @@ function parseProductId(text: string): string | null {
 
 /**
  * Читает QR-код из PNG/JPEG буфера.
- * Использует ZXing для декодирования.
+ * Использует jsQR для декодирования — чистый JS, работает в Node.js.
+ *
+ * jsQR принимает RGBA данные напрямую из Jimp — никакой конвертации не нужно.
  *
  * *Интериор: "Это не просто фото. Это улика. Скоро узнаем."*
  */
 export async function readQRFromBuffer(imageBuffer: Buffer): Promise<QRReadResult> {
+  logger.info('readQRFromBuffer: start', { bufferSize: imageBuffer.length });
+
   try {
     // Загружаем изображение через Jimp v1 API
+    logger.debug('readQRFromBuffer: loading image with Jimp');
     const image = await Jimp.fromBuffer(imageBuffer);
 
-    // Масштабируем если сли��ком маленькое (ZXing лучше работает с большими изображениями)
     const { width, height } = image;
+    logger.info('readQRFromBuffer: image loaded', { width, height });
+
+    // Масштабируем если слишком маленькое (jsQR лучше работает с большими изображениями)
     if (width < 300 || height < 300) {
       image.scale(2);
+      logger.info('readQRFromBuffer: image scaled x2', { newWidth: image.width, newHeight: image.height });
     }
 
-    // Конвертируем в RGBA буфер для ZXing
     const w = image.width;
     const h = image.height;
-    const rgbaBuffer = image.bitmap.data;
 
-    // ZXing ожидает Uint8ClampedArray с RGBA данными
-    const uint8Array = new Uint8ClampedArray(rgbaBuffer);
+    // jsQR принимает Uint8ClampedArray в формате RGBA — ровно то, что даёт Jimp
+    const rgbaData = new Uint8ClampedArray(image.bitmap.data);
+    logger.debug('readQRFromBuffer: passing RGBA data to jsQR', { w, h, dataLength: rgbaData.length });
 
-    // Создаём источник яркости для ZXing
-    const luminanceSource = new RGBLuminanceSource(uint8Array, w, h);
-    const binaryBitmap = new BinaryBitmap(new HybridBinarizer(luminanceSource));
+    // Декодируем QR-код
+    const code = jsQR(rgbaData, w, h);
 
-    // Декодируем QR
-    const reader = new BrowserQRCodeReader();
-    const result = reader.decodeBitmap(binaryBitmap);
+    if (!code) {
+      logger.info('readQRFromBuffer: no QR code found in image');
+      return { found: false };
+    }
 
-    const rawText = result.getText();
-    logger.info('QR code decoded', { rawText });
+    const rawText = code.data;
+    logger.info('readQRFromBuffer: QR code decoded successfully', { rawText });
 
     // Парсим UUID товара из текста
     const productId = parseProductId(rawText);
+    logger.info('readQRFromBuffer: parseProductId result', { productId, rawText });
 
     return {
       found: true,
@@ -80,17 +88,11 @@ export async function readQRFromBuffer(imageBuffer: Buffer): Promise<QRReadResul
       rawText,
     };
   } catch (err: any) {
-    // ZXing бросает NotFoundException если QR не найден
-    if (
-      err?.name === 'NotFoundException' ||
-      err?.message?.includes('No MultiFormat Readers') ||
-      err?.message?.includes('No barcode')
-    ) {
-      logger.info('No QR code found in image');
-      return { found: false };
-    }
-
-    logger.error('Error reading QR code', { err });
+    logger.error('readQRFromBuffer: unexpected error', {
+      errName: err?.name,
+      errMessage: err?.message,
+      errStack: err?.stack,
+    });
     return { found: false };
   }
 }

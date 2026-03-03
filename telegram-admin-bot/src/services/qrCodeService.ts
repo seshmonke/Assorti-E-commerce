@@ -6,6 +6,7 @@ class QRCodeService {
    * Генерирует QR-код в виде Data URL
    */
   async generateQRCodeDataUrl(data: string, options?: any): Promise<string> {
+    logger.debug('generateQRCodeDataUrl: start', { data, options });
     try {
       const qrCodeDataUrl = await QRCode.toDataURL(data, {
         errorCorrectionLevel: 'H',
@@ -15,9 +16,15 @@ class QRCodeService {
         width: 300,
         ...options,
       });
+      logger.info('generateQRCodeDataUrl: success', { dataLength: (qrCodeDataUrl as unknown as string).length });
       return qrCodeDataUrl as unknown as string;
-    } catch (error) {
-      logger.error('Failed to generate QR code data URL', { data, error });
+    } catch (error: any) {
+      logger.error('generateQRCodeDataUrl: failed', {
+        data,
+        errName: error?.name,
+        errMessage: error?.message,
+        errStack: error?.stack,
+      });
       throw error;
     }
   }

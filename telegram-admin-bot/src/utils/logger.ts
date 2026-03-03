@@ -15,12 +15,46 @@ type LogLevel = 'info' | 'error' | 'warn' | 'debug';
 class Logger {
   private isDevelopment = env.NODE_ENV === 'development';
 
+  private serializeData(data: any): any {
+    if (data === null || data === undefined) return data;
+
+    if (data instanceof Error) {
+      return {
+        message: data.message,
+        name: data.name,
+        stack: data.stack,
+      };
+    }
+
+    if (typeof data === 'object') {
+      const result: Record<string, any> = {};
+      for (const key of Object.keys(data)) {
+        const val = data[key];
+        if (val instanceof Error) {
+          result[key] = {
+            message: val.message,
+            name: val.name,
+            stack: val.stack,
+          };
+        } else if (val !== null && typeof val === 'object' && !Array.isArray(val)) {
+          result[key] = this.serializeData(val);
+        } else {
+          result[key] = val;
+        }
+      }
+      return result;
+    }
+
+    return data;
+  }
+
   private formatMessage(level: LogLevel, message: string, data?: any): string {
     const timestamp = new Date().toISOString();
     const levelUpper = level.toUpperCase();
 
-    if (data) {
-      return `[${timestamp}] ${levelUpper}: ${message} ${JSON.stringify(data)}`;
+    if (data !== undefined) {
+      const serialized = this.serializeData(data);
+      return `[${timestamp}] ${levelUpper}: ${message} ${JSON.stringify(serialized)}`;
     }
 
     return `[${timestamp}] ${levelUpper}: ${message}`;

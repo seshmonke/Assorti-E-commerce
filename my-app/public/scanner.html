@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Сканер этикеток</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="/jsQR.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: #000;
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    #scanner-container {
+      position: relative;
+      width: 100%;
+      max-width: 480px;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    #canvas {
+      display: none;
+    }
+
+    /* Рамка прицела */
+    #overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+
+    #scan-frame {
+      width: 260px;
+      height: 260px;
+      position: relative;
+    }
+
+    /* Углы рамки */
+    #scan-frame::before,
+    #scan-frame::after,
+    .corner-br,
+    .corner-bl {
+      content: '';
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      border-color: #fff;
+      border-style: solid;
+    }
+
+    #scan-frame::before {
+      top: 0;
+      left: 0;
+      border-width: 4px 0 0 4px;
+      border-radius: 4px 0 0 0;
+    }
+
+    #scan-frame::after {
+      top: 0;
+      right: 0;
+      border-width: 4px 4px 0 0;
+      border-radius: 0 4px 0 0;
+    }
+
+    .corner-br {
+      bottom: 0;
+      right: 0;
+      border-width: 0 4px 4px 0;
+      border-radius: 0 0 4px 0;
+    }
+
+    .corner-bl {
+      bottom: 0;
+      left: 0;
+      border-width: 0 0 4px 4px;
+      border-radius: 0 0 0 4px;
+    }
+
+    /* Анимированная линия сканирования */
+    #scan-line {
+      position: absolute;
+      top: 0;
+      left: 4px;
+      right: 4px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #00e5ff, transparent);
+      animation: scan 2s linear infinite;
+    }
+
+    @keyframes scan {
+      0%   { top: 4px; opacity: 1; }
+      90%  { top: 252px; opacity: 1; }
+      100% { top: 252px; opacity: 0; }
+    }
+
+    /* Затемнение вокруг рамки */
+    .overlay-top,
+    .overlay-bottom,
+    .overlay-left,
+    .overlay-right {
+      position: absolute;
+      background: rgba(0, 0, 0, 0.55);
+    }
+
+    .overlay-top {
+      top: 0; left: 0; right: 0;
+      height: calc(50% - 130px);
+    }
+
+    .overlay-bottom {
+      bottom: 0; left: 0; right: 0;
+      height: calc(50% - 130px);
+    }
+
+    .overlay-left {
+      top: calc(50% - 130px);
+      left: 0;
+      width: calc(50% - 130px);
+      height: 260px;
+    }
+
+    .overlay-right {
+      top: calc(50% - 130px);
+      right: 0;
+      width: calc(50% - 130px);
+      height: 260px;
+    }
+
+    #status {
+      position: absolute;
+      bottom: 80px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-size: 15px;
+      color: #fff;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+      padding: 0 20px;
+    }
+
+    #status.success {
+      color: #4caf50;
+      font-weight: bold;
+      font-size: 17px;
+    }
+
+    #status.error {
+      color: #f44336;
+    }
+
+    #title {
+      position: absolute;
+      top: 30px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-size: 18px;
+      font-weight: 600;
+      color: #fff;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+    }
+
+    /* Экран ошибки доступа к камере */
+    #error-screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 30px;
+      text-align: center;
+      gap: 16px;
+    }
+
+    #error-screen .icon {
+      font-size: 64px;
+    }
+
+    #error-screen h2 {
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    #error-screen p {
+      font-size: 14px;
+      color: #aaa;
+      line-height: 1.5;
+    }
+
+    #retry-btn {
+      margin-top: 8px;
+      padding: 12px 32px;
+      background: #2196f3;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    #retry-btn:active {
+      background: #1976d2;
+    }
+  </style>
+</head>
+<body>
+  <div id="scanner-container">
+    <video id="video" autoplay playsinline muted></video>
+    <canvas id="canvas"></canvas>
+
+    <div id="overlay">
+      <div class="overlay-top"></div>
+      <div class="overlay-bottom"></div>
+      <div class="overlay-left"></div>
+      <div class="overlay-right"></div>
+
+      <div id="scan-frame">
+        <div class="corner-br"></div>
+        <div class="corner-bl"></div>
+        <div id="scan-line"></div>
+      </div>
+    </div>
+
+    <div id="title">📷 Сканер этикеток</div>
+    <div id="status">Наведите камеру на QR-код этикетки</div>
+  </div>
+
+  <div id="error-screen">
+    <div class="icon">📵</div>
+    <h2>Нет доступа к камере</h2>
+    <p>Разрешите доступ к камере в настройках браузера и попробуйте снова.</p>
+    <button id="retry-btn" onclick="startScanner()">Попробовать снова</button>
+  </div>
+
+  <script>
+    // Инициализируем Telegram WebApp
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+      tg.ready();
+      tg.expand();
+    }
+
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const statusEl = document.getElementById('status');
+    const scannerContainer = document.getElementById('scanner-container');
+    const errorScreen = document.getElementById('error-screen');
+
+    let scanning = true;
+    let animFrameId = null;
+    let stream = null;
+
+    /**
+     * Парсит UUID товара из QR-кода.
+     * Поддерживает:
+     *   - https://assortishop.online/product/{uuid}
+     *   - Чистый UUID
+     */
+    function parseProductId(text) {
+      // URL с /product/{uuid}
+      const urlMatch = text.match(/\/product\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
+      if (urlMatch) return urlMatch[1];
+
+      // Чистый UUID
+      const uuidMatch = text.match(/^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i);
+      if (uuidMatch) return uuidMatch[1];
+
+      return null;
+    }
+
+    function setStatus(msg, type) {
+      statusEl.textContent = msg;
+      statusEl.className = type || '';
+    }
+
+    function tick() {
+      if (!scanning) return;
+
+      if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height, {
+          inversionAttempts: 'dontInvert',
+        });
+
+        if (code) {
+          const rawText = code.data;
+          const productId = parseProductId(rawText);
+
+          if (productId) {
+            // Нашли UUID товара!
+            scanning = false;
+            if (animFrameId) cancelAnimationFrame(animFrameId);
+
+            setStatus('✅ QR-код распознан! Открываю товар...', 'success');
+
+            // Останавливаем камеру
+            if (stream) {
+              stream.getTracks().forEach(t => t.stop());
+            }
+
+            // Отправляем UUID в бот через Telegram WebApp
+            setTimeout(() => {
+              if (tg) {
+                tg.sendData(productId);
+              } else {
+                // Fallback для тестирования вне Telegram
+                alert('Product ID: ' + productId);
+              }
+            }, 600);
+
+          } else {
+            // QR найден, но не наш товар
+            setStatus('⚠️ QR не от нашего магазина: ' + rawText.slice(0, 40), 'error');
+          }
+        }
+      }
+
+      animFrameId = requestAnimationFrame(tick);
+    }
+
+    async function startScanner() {
+      scanning = true;
+      scannerContainer.style.display = 'flex';
+      errorScreen.style.display = 'none';
+      setStatus('Наведите камеру на QR-код этикетки');
+
+      try {
+        // Предпочитаем заднюю камеру
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+          },
+          audio: false,
+        });
+
+        video.srcObject = stream;
+        video.setAttribute('playsinline', true);
+        await video.play();
+
+        animFrameId = requestAnimationFrame(tick);
+
+      } catch (err) {
+        console.error('Camera error:', err);
+        scannerContainer.style.display = 'none';
+        errorScreen.style.display = 'flex';
+      }
+    }
+
+    // Запускаем сканер при загрузке страницы
+    startScanner();
+
+    // Останавливаем камеру при закрытии WebApp
+    window.addEventListener('beforeunload', () => {
+      scanning = false;
+      if (stream) stream.getTracks().forEach(t => t.stop());
+    });
+  </script>
+</body>
+</html>

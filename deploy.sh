@@ -68,6 +68,27 @@ send_telegram "🚀 <b>Deploy started</b> — $(date '+%Y-%m-%d %H:%M:%S')"
 
 DEPLOY_STATUS="success"
 
+# ── 0. TELEGRAM BOT BUILD ─────────────────────────────────────
+echo_yellow "── [0/4] Telegram Bot (TypeScript build) ─"
+
+BOT_DIR="$BASE_DIR/telegram-admin-bot"
+
+if [[ ! -d "$BOT_DIR" ]]; then
+  log_error "Telegram bot directory not found: $BOT_DIR"
+  DEPLOY_STATUS="failed"
+  send_telegram "❌ <b>Deploy FAILED</b>: Telegram bot dir not found"
+  exit 1
+fi
+
+cd "$BOT_DIR"
+log_info "Building telegram-admin-bot..."
+
+npm ci 2>&1 | tee -a "$LOG_FILE"
+echo_green "Telegram bot: npm ci OK"
+
+npm run build 2>&1 | tee -a "$LOG_FILE"
+echo_green "Telegram bot: build OK"
+
 # ── 1. FRONTEND ───────────────────────────────────────────────
 echo_yellow "── [1/4] Frontend (React/Vite) ──────────"
 
