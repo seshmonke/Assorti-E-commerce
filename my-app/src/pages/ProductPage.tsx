@@ -104,11 +104,10 @@ export function ProductPage() {
             <div className="product-gallery-wrapper">
               <ImageGallery
                 items={galleryImages}
-                showThumbnails={(product.images?.length ?? 0) > 1}
-                showFullscreenButton={true}
+                showThumbnails={false}
+                showFullscreenButton={false}
                 showPlayButton={false}
                 slideDuration={300}
-                thumbnailPosition="bottom"
                 lazyLoad={true}
                 onClick={() => tg?.HapticFeedback?.impactOccurred('light')}
               />

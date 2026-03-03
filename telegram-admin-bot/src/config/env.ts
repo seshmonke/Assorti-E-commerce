@@ -8,6 +8,7 @@ export const env = {
   ALLOWED_USER_IDS: process.env.ALLOWED_USER_IDS || '',
   API_SECRET_TOKEN: process.env.API_SECRET_TOKEN || 'admin-secret-token',
   NODE_ENV: process.env.NODE_ENV || 'development',
+  SITE_URL: process.env.SITE_URL || 'https://assortishop.online',
 };
 
 // Validate required environment variables

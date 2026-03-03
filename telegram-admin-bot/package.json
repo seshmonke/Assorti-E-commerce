@@ -6,7 +6,7 @@
   "main": "dist/main.js",
   "scripts": {
     "dev": "tsx watch src/main.ts",
-    "build": "rm -rf dist && tsc",
+    "build": "rm -rf dist && tsc && mkdir -p dist/assets/fonts && cp src/assets/fonts/*.ttf dist/assets/fonts/",
     "start": "node dist/main.js",
     "pm2": "npm run build && pm2 restart main --update-env",
     "lint": "eslint .",
@@ -23,10 +23,13 @@
   "license": "ISC",
   "dependencies": {
     "@grammyjs/conversations": "^2.1.1",
+    "@zxing/library": "^0.21.3",
     "axios": "^1.13.5",
+    "canvas": "^3.2.1",
     "dotenv": "^16.3.1",
     "grammy": "^1.24.0",
-    "qrcode": "^1.5.3"
+    "jimp": "^1.6.0",
+    "qrcode": "^1.5.4"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",

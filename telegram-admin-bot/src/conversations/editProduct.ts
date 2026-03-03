@@ -1,5 +1,5 @@
 import { type Conversation, type ConversationFlavor } from '@grammyjs/conversations';
-import { type Context, Keyboard } from 'grammy';
+import { type Context, Keyboard, InputFile } from 'grammy';
 import { apiService } from '../services/apiService';
 import { cartService } from '../services/cartService';
 import { mainMenuKeyboard, backKeyboard } from '../keyboards/mainMenu';
@@ -8,6 +8,7 @@ import type { Product, Category } from '../types';
 import { formatOrderCard } from './showOrders';
 import { showOrdersConversation } from './showOrders';
 import { showCartConversation } from './showCart';
+import { generateLabelImage } from '../services/labelService';
 
 type MyContext = ConversationFlavor<Context>;
 type MyConversation = Conversation<MyContext, MyContext>;
@@ -57,7 +58,7 @@ export const productActionKeyboard = new Keyboard()
   .row()
   .text('🛒 В корзину').text('🛒 Корзина')
   .row()
-  .text('📦 Посмотреть заказы')
+  .text('📦 Посмотреть заказы').text('🖨️ Печать этикетки')
   .resized();
 
 export const editProductKeyboard = new Keyboard()
@@ -193,6 +194,31 @@ export async function editProductById(
         parse_mode: 'HTML',
         reply_markup: productActionKeyboard,
       });
+      continue;
+    }
+
+    // === ПЕЧАТЬ ЭТИКЕТКИ ===
+    // *Визуальное Чутьё: "Sofia Sans — это поэзия на этикетке. Печать или сдохни!"*
+    if (actionText === '🖨️ Печать этикетки') {
+      try {
+        await ctx.reply('⏳ Генерирую этикетку...', { reply_markup: productActionKeyboard });
+        const labelBuffer = await conversation.external(() => generateLabelImage(product!));
+        await ctx.replyWithPhoto(new InputFile(labelBuffer, `label_${product!.id}.png`), {
+          caption:
+            `🖨️ <b>Этикетка для HPRT HM-T260LR</b>\n` +
+            `📦 ${product!.name}\n` +
+            `🆔 <code>${product!.id}</code>\n\n` +
+            `QR ведёт на: assortishop.online/product/${product!.id}`,
+          parse_mode: 'HTML',
+          reply_markup: productActionKeyboard,
+        });
+        logger.info('Label printed via bot', { productId: product!.id });
+      } catch (err) {
+        logger.error('Failed to generate label', { err });
+        await ctx.reply('⚠️ Ошибка при генерации этикетки. Попробуйте снова.', {
+          reply_markup: productActionKeyboard,
+        });
+      }
       continue;
     }
   }

@@ -42,9 +42,9 @@ function formatArchiveCard(item: Product): string {
   text += `🆔 ID: <code>${item.id}</code>\n`;
   text += `📝 Название: <b>${item.name}</b>\n`;
   text += `💰 Цена: <b>${item.price} руб.</b>\n`;
-  text += `🖼 Картинка: ${item.image}\n`;
-  text += `📂 Категория: ${categoryName}\n`;
-  text += `📄 Описание: ${item.description}\n`;
+  text += `🖼 Картинки: ${Array.isArray(item.images) ? item.images.join(', ') : '—'}\n`;
+  text += `� Категория: ${categoryName}\n`;
+  text += `�📄 Описание: ${item.description}\n`;
   text += `📏 Размеры: ${sizes}\n`;
   text += `🧵 Состав: ${composition}\n`;
   if (item.discount !== null && item.discount !== undefined) {

@@ -1,5 +1,6 @@
-import { Bot } from 'grammy';
+import { Bot, InputFile } from 'grammy';
 import { conversations, createConversation } from '@grammyjs/conversations';
+import axios from 'axios';
 import { env } from './config/env';
 import { logger } from './utils/logger';
 import { loggingMiddleware } from './middleware/logger';
@@ -14,6 +15,9 @@ import { showOrdersConversation } from './conversations/showOrders';
 import { findOrderConversation } from './conversations/findOrder';
 import { showArchiveConversation } from './conversations/showArchive';
 import { showCartConversation } from './conversations/showCart';
+import { readQRFromBuffer } from './services/qrReaderService';
+import { apiService } from './services/apiService';
+import { editProductById } from './conversations/editProduct';
 
 // Создаём экземпляр бота с типизированным контекстом
 export const bot = new Bot<MyContext>(env.BOT_API_KEY);
@@ -110,6 +114,65 @@ bot.hears('📁 Посмотреть архив', async (ctx) => {
 // Кнопка "Корзина"
 bot.hears('🛒 Корзина', async (ctx) => {
   await ctx.conversation.enter('showCartConversation');
+});
+
+// Обработчик фото — поиск товара по QR-коду
+// *Интериор: "Это не просто фото. Это улика. Скоро узнаем."*
+bot.on('message:photo', async (ctx) => {
+  try {
+    // Берём фото наилучшего качества (последнее в массиве)
+    const photos = ctx.message.photo;
+    const bestPhoto = photos[photos.length - 1];
+
+    await ctx.reply('🔍 Сканирую QR-код...');
+
+    // Скачиваем файл
+    const fileInfo = await ctx.api.getFile(bestPhoto.file_id);
+    const fileUrl = `https://api.telegram.org/file/bot${env.BOT_API_KEY}/${fileInfo.file_path}`;
+    const response = await axios.get<ArrayBuffer>(fileUrl, { responseType: 'arraybuffer' });
+    const imageBuffer = Buffer.from(response.data);
+
+    // Читаем QR-код
+    const qrResult = await readQRFromBuffer(imageBuffer);
+
+    if (!qrResult.found) {
+      // *Гарри: "Это что за абстрактное искусство? Нормальный QR давай, коп!"*
+      await ctx.reply(
+        '🤔 Это что за абстрактное искусство? QR-код не найден.\n\nОтправь нормальное фото с QR-кодом товара.',
+        { reply_markup: mainMenuKeyboard },
+      );
+      return;
+    }
+
+    if (!qrResult.productId) {
+      await ctx.reply(
+        `🔎 QR найден, но это не товар нашего магазина.\n\nСодержимое: <code>${qrResult.rawText}</code>`,
+        { parse_mode: 'HTML', reply_markup: mainMenuKeyboard },
+      );
+      return;
+    }
+
+    // Нашли UUID товара — загружаем карточку
+    await ctx.reply(`✅ QR распознан! Загружаю товар...`);
+
+    const product = await apiService.getProductById(qrResult.productId);
+    if (!product) {
+      await ctx.reply(
+        `❌ Товар с ID <code>${qrResult.productId}</code> не найден в базе.`,
+        { parse_mode: 'HTML', reply_markup: mainMenuKeyboard },
+      );
+      return;
+    }
+
+    // Входим в conversation для работы с товаром
+    await ctx.conversation.enter('findProductConversation');
+    logger.info('Product found via QR scan', { productId: qrResult.productId });
+  } catch (err) {
+    logger.error('Error processing photo for QR', { err });
+    await ctx.reply('⚠️ Ошибка при обработке фото. Попробуйте снова.', {
+      reply_markup: mainMenuKeyboard,
+    });
+  }
 });
 
 // Обработчик ошибок
