@@ -1,4 +1,4 @@
-# [ASSORTI — Fullstack E-Commerce Platform](assortishop.online)
+# [ASSORTI — Fullstack E-Commerce Platform](https://assortishop.online)
 
 Fullstack-платформа интернет-магазина одежды и аксессуаров с Telegram Mini App, REST API и Telegram-ботом для администрирования.
 
