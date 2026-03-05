@@ -13,9 +13,7 @@ type MyContext = ConversationFlavor<Context>;
 type MyConversation = Conversation<MyContext, MyContext>;
 
 export function formatProductCard(product: Product): string {
-  const sizes = Array.isArray(product.sizes)
-    ? (product.sizes as string[]).join(', ')
-    : String(product.sizes ?? '—');
+  const sizes = product.sizes || '—';
 
   const composition =
     typeof product.composition === 'object' &&
@@ -69,7 +67,9 @@ export const editProductKeyboard = new Keyboard()
   .row()
   .text('✏️ Изменить размер').text('✏️ Изменить состав')
   .row()
-  .text('✏️ Изменить скидку').text('🗑 Удалить товар')
+  .text('✏️ Изменить скидку').text('✏️ Изменить описание')
+  .row()
+  .text('🗑 Удалить товар')
   .resized();
 
 const confirmDeleteKeyboard = new Keyboard()
@@ -270,9 +270,10 @@ async function runEditLoop(
     else if (editText === '✏️ Изменить цену') { fieldPrompt = 'Введите новую цену (число):'; fieldKey = 'price'; }
     else if (editText === '✏️ Изменить картинку') { fieldPrompt = 'Введите URL картинок через запятую (можно одну):'; fieldKey = 'images'; }
     else if (editText === '✏️ Изменить категорию') { fieldPrompt = 'Выберите новую категорию:'; fieldKey = 'category'; }
-    else if (editText === '✏️ Изменить размер') { fieldPrompt = 'Введите размеры через запятую (S,M,L,XL):'; fieldKey = 'sizes'; }
+    else if (editText === '✏️ Изменить размер') { fieldPrompt = 'Введите размер товара (например: M или 42-44):'; fieldKey = 'sizes'; }
     else if (editText === '✏️ Изменить состав') { fieldPrompt = 'Введите состав через запятую:'; fieldKey = 'composition'; }
     else if (editText === '✏️ Изменить скидку') { fieldPrompt = 'Введите скидку в % (0 — без скидки):'; fieldKey = 'discount'; }
+    else if (editText === '✏️ Изменить описание') { fieldPrompt = 'Введите новое описание:'; fieldKey = 'description'; }
     else continue;
 
     let categories: Category[] = [];
@@ -323,7 +324,7 @@ async function runEditLoop(
     } else if (fieldKey === 'images') {
       updateData.images = newValue.split(',').map((s) => s.trim()).filter(Boolean);
     } else if (fieldKey === 'sizes') {
-      updateData.sizes = newValue.split(',').map((s) => s.trim());
+      updateData.sizes = newValue;
     } else if (fieldKey === 'composition') {
       updateData.composition = newValue.split(',').map((s) => s.trim());
     } else {

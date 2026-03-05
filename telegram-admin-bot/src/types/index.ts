@@ -7,7 +7,7 @@ export interface Product {
   categoryId: string;
   category?: Category;
   description: string;
-  sizes: unknown;
+  sizes: string;
   composition: unknown;
   discount: number | null;
   archive: boolean;
@@ -21,7 +21,7 @@ export interface CreateProductData {
   images: string[];
   categoryId: string;
   description: string;
-  sizes: unknown;
+  sizes: string;
   composition: unknown;
   discount?: number;
 }
@@ -32,7 +32,7 @@ export interface UpdateProductData {
   images?: string[];
   categoryId?: string;
   description?: string;
-  sizes?: unknown;
+  sizes?: string;
   composition?: unknown;
   discount?: number;
   archive?: boolean;

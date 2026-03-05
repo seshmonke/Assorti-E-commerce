@@ -19,13 +19,13 @@ function safeParseJson<T>(value: unknown, fallback: T): T {
 }
 
 /**
- * Нормализует JSON-поля продукта (images, sizes, composition)
+ * Нормализует JSON-поля продукта (images, composition)
+ * sizes теперь обычная строка — не требует парсинга
  */
 function normalizeProductJson(product: IProduct): IProduct {
     return {
         ...product,
         images: safeParseJson<string[]>(product.images as unknown, []),
-        sizes: safeParseJson<unknown[]>(product.sizes as unknown, []),
         composition: safeParseJson<unknown>(product.composition as unknown, {}),
     };
 }
@@ -119,7 +119,7 @@ export class ProductModel {
             data: {
                 ...rest,
                 images: (images ?? []) as Prisma.InputJsonValue,
-                sizes: sizes as Prisma.InputJsonValue,
+                sizes: sizes,
                 composition: composition as Prisma.InputJsonValue,
                 archive: archive ?? false,
                 category: { connect: { id: categoryId } },
@@ -138,7 +138,7 @@ export class ProductModel {
             data: {
                 ...rest,
                 ...(images !== undefined ? { images: images as Prisma.InputJsonValue } : {}),
-                ...(sizes !== undefined ? { sizes: sizes as Prisma.InputJsonValue } : {}),
+                ...(sizes !== undefined ? { sizes: sizes } : {}),
                 ...(composition !== undefined ? { composition: composition as Prisma.InputJsonValue } : {}),
                 ...(categoryId ? { category: { connect: { id: categoryId } } } : {}),
             },

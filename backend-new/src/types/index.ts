@@ -6,7 +6,7 @@ export interface IProduct {
     categoryId: string;
     category?: ICategory;
     description: string;
-    sizes: unknown;
+    sizes: string;
     composition: unknown;
     discount: number | null;
     archive: boolean;
@@ -20,7 +20,7 @@ export interface CreateProductDTO {
     images: string[];
     categoryId: string;
     description: string;
-    sizes: unknown;
+    sizes: string;
     composition: unknown;
     discount?: number;
     archive?: boolean;
@@ -32,7 +32,7 @@ export interface UpdateProductDTO {
     images?: string[];
     categoryId?: string;
     description?: string;
-    sizes?: unknown;
+    sizes?: string;
     composition?: unknown;
     discount?: number;
     archive?: boolean;

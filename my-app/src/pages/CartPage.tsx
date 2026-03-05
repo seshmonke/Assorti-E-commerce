@@ -211,7 +211,7 @@ export default function CartPage() {
     const price = item.discount
       ? Math.round(item.price * (1 - item.discount / 100))
       : item.price;
-    return sum + price * item.quantity;
+    return sum + price;
   }, 0);
 
   const deliveryPrice = deliveryCalc?.delivery_sum ?? 0;

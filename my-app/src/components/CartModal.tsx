@@ -1,5 +1,5 @@
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { removeFromCart, updateQuantity } from '../store/cartSlice';
+import { removeFromCart } from '../store/cartSlice';
 import { Link } from 'react-router-dom';
 
 interface CartModalProps {
@@ -15,10 +15,6 @@ export function CartModal({ isOpen, onClose }: CartModalProps) {
     dispatch(removeFromCart({ id, size }));
   };
 
-  const handleQuantityChange = (id: string, quantity: number, size: string) => {
-    dispatch(updateQuantity({ id, quantity, size }));
-  };
-
   // price — оригинальная цена из БД, итоговая = price * (1 - discount/100)
   const calculateFinalPrice = (item: typeof items[0]): number => {
     if (!item.discount) return item.price;
@@ -27,11 +23,11 @@ export function CartModal({ isOpen, onClose }: CartModalProps) {
 
   const calculateItemDiscount = (item: typeof items[0]): number => {
     if (!item.discount) return 0;
-    return (item.price - calculateFinalPrice(item)) * item.quantity;
+    return item.price - calculateFinalPrice(item);
   };
 
   const totalDiscount = items.reduce((sum, item) => sum + calculateItemDiscount(item), 0);
-  const totalPriceWithoutDiscount = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const totalPriceWithoutDiscount = items.reduce((sum, item) => sum + item.price, 0);
 
   return (
     <div
@@ -68,8 +64,6 @@ export function CartModal({ isOpen, onClose }: CartModalProps) {
                       <th>Размер</th>
                       <th>Цена</th>
                       {items.some(item => item.discount) && <th>Без скидки</th>}
-                      <th>Кол-во</th>
-                      <th>Сумма</th>
                       <th></th>
                     </tr>
                   </thead>
@@ -113,32 +107,6 @@ export function CartModal({ isOpen, onClose }: CartModalProps) {
                               )}
                             </td>
                           )}
-                          <td>
-                            <div className="d-flex align-items-center gap-1">
-                              <button
-                                className="btn btn-sm btn-outline-secondary"
-                                onClick={() =>
-                                  handleQuantityChange(item.id, item.quantity - 1, item.size)
-                                }
-                              >
-                                −
-                              </button>
-                              <span style={{ minWidth: '25px', textAlign: 'center' }}>
-                                {item.quantity}
-                              </span>
-                              <button
-                                className="btn btn-sm btn-outline-secondary"
-                                onClick={() =>
-                                  handleQuantityChange(item.id, item.quantity + 1, item.size)
-                                }
-                              >
-                                +
-                              </button>
-                            </div>
-                          </td>
-                          <td className="fw-bold">
-                            {finalPrice * item.quantity} ₽
-                          </td>
                           <td>
                             <button
                               className="btn btn-sm btn-outline-danger"

@@ -15,7 +15,6 @@ export function ProductPage() {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { currentProduct: product, loading, error } = useAppSelector((state) => state.products);
-  const [selectedSize, setSelectedSize] = useState<string>('');
   const [isAdded, setIsAdded] = useState<boolean>(false);
 
   useEffect(() => {
@@ -26,15 +25,6 @@ export function ProductPage() {
       dispatch(clearCurrentProduct());
     };
   }, [id, dispatch]);
-
-  // Автоматически выбираем размер, если он один
-  useEffect(() => {
-    if (product && product.sizes.length === 1) {
-      setSelectedSize(product.sizes[0]);
-    } else {
-      setSelectedSize('');
-    }
-  }, [product]);
 
   if (loading) {
     return (
@@ -64,7 +54,7 @@ export function ProductPage() {
   }
 
   const handleAddToCart = () => {
-    dispatch(addToCart({ product, size: selectedSize }));
+    dispatch(addToCart({ product, size: product.sizes }));
     setIsAdded(true);
     tg?.HapticFeedback?.impactOccurred('light');
 
@@ -141,23 +131,13 @@ export function ProductPage() {
               <p className="text-muted">{product.description}</p>
             </div>
 
-            {/* Размеры */}
-            <div className="mb-4">
-              <h5>Размер</h5>
-              <div className="d-flex gap-2 flex-wrap">
-                {product.sizes.map((size) => (
-                  <button
-                    key={size}
-                    className={`btn ${
-                      selectedSize === size ? 'btn-danger' : 'btn-outline-danger'
-                    }`}
-                    onClick={() => setSelectedSize(size)}
-                  >
-                    {size}
-                  </button>
-                ))}
+            {/* Размер */}
+            {product.sizes && (
+              <div className="mb-4">
+                <h5>Размер</h5>
+                <p className="text-muted mb-0">{product.sizes}</p>
               </div>
-            </div>
+            )}
 
             {/* Состав */}
             <div className="mb-4">
@@ -186,7 +166,7 @@ export function ProductPage() {
             <button
               className={`btn btn-lg w-100 add-to-cart-btn ${isAdded ? 'btn-added' : 'btn-danger'}`}
               onClick={handleAddToCart}
-              disabled={!selectedSize || isAdded}
+              disabled={isAdded}
               style={{ transition: 'all 0.3s ease' }}
             >
               {isAdded ? 'Добавлено' : 'Добавить в корзину'}

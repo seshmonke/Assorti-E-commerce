@@ -118,12 +118,12 @@ export async function addProductConversation(
     break;
   }
 
-  // Шаг 6: Размеры
-  await ctx.reply('Шаг 6/8: Введите размеры через запятую (например: S,M,L,XL):', {
+  // Шаг 6: Размер
+  await ctx.reply('Шаг 6/8: Введите размер товара (например: M или 42-44):', {
     reply_markup: backKeyboard,
   });
 
-  let sizes: string[] = [];
+  let sizes = '';
   while (true) {
     const c = await conversation.wait();
     const t = c.message?.text?.trim();
@@ -132,7 +132,7 @@ export async function addProductConversation(
       await ctx.reply('Главное меню', { reply_markup: mainMenuKeyboard });
       return;
     }
-    sizes = t.split(',').map((s) => s.trim()).filter(Boolean);
+    sizes = t;
     break;
   }
 

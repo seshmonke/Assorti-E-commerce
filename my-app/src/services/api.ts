@@ -54,7 +54,7 @@ export interface Product {
   categoryId: string;
   category?: Category;
   description: string;
-  sizes: string[];
+  sizes: string;
   composition: Record<string, number>;
   discount: number | null;
   createdAt: string;
@@ -73,11 +73,8 @@ interface ApiResponse<T> {
  * SQLite + Prisma могут вернуть их как строку вместо объекта.
  */
 function normalizeProduct(product: Product): Product {
-  const sizes = Array.isArray(product.sizes)
-    ? product.sizes
-    : typeof product.sizes === 'string'
-      ? (() => { try { return JSON.parse(product.sizes as unknown as string); } catch { return []; } })()
-      : [];
+  // sizes — обычная строка, парсинг не нужен
+  const sizes: string = typeof product.sizes === 'string' ? product.sizes : String(product.sizes ?? '');
 
   const composition = (
     typeof product.composition === 'object'

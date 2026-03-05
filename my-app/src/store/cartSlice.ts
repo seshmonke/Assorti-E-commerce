@@ -31,7 +31,7 @@ const calculateTotalPrice = (items: CartItem[]): number => {
     const finalPrice = item.discount
       ? Math.round(item.price * (1 - item.discount / 100))
       : item.price;
-    return total + finalPrice * item.quantity;
+    return total + finalPrice;
   }, 0);
 };
 
@@ -47,9 +47,7 @@ const cartSlice = createSlice({
       const { product, size } = action.payload;
       const existingItem = state.items.find(item => item.id === product.id && item.size === size);
 
-      if (existingItem) {
-        existingItem.quantity += 1;
-      } else {
+      if (!existingItem) {
         state.items.push({
           id: product.id,
           name: product.name,
@@ -69,19 +67,6 @@ const cartSlice = createSlice({
       state.items = state.items.filter(item => !(item.id === action.payload.id && item.size === action.payload.size));
       state.totalPrice = calculateTotalPrice(state.items);
       saveToLocalStorage(state.items);
-    },
-
-    updateQuantity: (state, action: PayloadAction<{ id: string; quantity: number; size: string }>) => {
-      const item = state.items.find(item => item.id === action.payload.id && item.size === action.payload.size);
-      if (item) {
-        if (action.payload.quantity <= 0) {
-          state.items = state.items.filter(item => !(item.id === action.payload.id && item.size === action.payload.size));
-        } else {
-          item.quantity = action.payload.quantity;
-        }
-        state.totalPrice = calculateTotalPrice(state.items);
-        saveToLocalStorage(state.items);
-      }
     },
 
     clearCart: (state) => {
@@ -104,5 +89,5 @@ const cartSlice = createSlice({
   }
 });
 
-export const { addToCart, removeFromCart, updateQuantity, clearCart, loadFromLocalStorage } = cartSlice.actions;
+export const { addToCart, removeFromCart, clearCart, loadFromLocalStorage } = cartSlice.actions;
 export const cartReducer = cartSlice.reducer;

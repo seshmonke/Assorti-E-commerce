@@ -42,7 +42,7 @@ model Product {
   categoryId        String
   category          Category    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   description       String
-  sizes             Json
+  sizes             String
   composition       Json
   discount          Int?
   archive           Boolean     @default(false)
