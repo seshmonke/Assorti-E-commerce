@@ -36,7 +36,17 @@ export function formatOrderCard(order: Order): string {
     }
   }
 
+  const deliveryLabel = order.deliveryType === 'pickup'
+    ? '🏪 Самовывоз'
+    : order.deliveryCity
+      ? `🚚 СДЭК → ${order.deliveryCity}${order.deliveryPvzAddress ? ` (${order.deliveryPvzAddress})` : ''}`
+      : '🚚 СДЭК';
+
   text += `💰 Сумма: <b>${order.totalPrice} руб.</b>\n`;
+  if (order.deliveryType !== 'pickup' && order.deliveryPrice != null && order.deliveryPrice > 0) {
+    text += `🚚 Доставка: ${order.deliveryPrice} руб.\n`;
+  }
+  text += `📬 Получение: ${deliveryLabel}\n`;
   text += `💳 Оплата: ${paymentLabel}\n`;
   text += `📊 Статус: ${statusLabel}\n`;
   if (order.paymentId) {

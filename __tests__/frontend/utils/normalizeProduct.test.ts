@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import type { Product } from '../../../my-app/src/services/api.js'
+import type { Product } from '../../../frontend/src/services/api.js'
 
 // Мокаем axios и logger чтобы не падало при импорте api.ts
 vi.mock('axios', () => {
@@ -16,7 +16,7 @@ vi.mock('axios', () => {
   return { default: mockAxios, isAxiosError: vi.fn() }
 })
 
-vi.mock('../../../my-app/src/utils/logger.js', () => ({
+vi.mock('../../../frontend/src/utils/logger.js', () => ({
   logger: { debug: vi.fn(), error: vi.fn(), warn: vi.fn(), info: vi.fn() },
 }))
 
@@ -43,7 +43,7 @@ describe('API normalizeProduct (через fetchAllProducts)', () => {
   })
 
   it('возвращает продукты с корректной строкой sizes', async () => {
-    const { fetchAllProducts } = await import('../../../my-app/src/services/api.js')
+    const { fetchAllProducts } = await import('../../../frontend/src/services/api.js')
 
     vi.mocked(axios.get).mockResolvedValueOnce({
       data: { success: true, data: [baseProduct] },
@@ -54,7 +54,7 @@ describe('API normalizeProduct (через fetchAllProducts)', () => {
   })
 
   it('возвращает sizes как строку если пришла строка', async () => {
-    const { fetchAllProducts } = await import('../../../my-app/src/services/api.js')
+    const { fetchAllProducts } = await import('../../../frontend/src/services/api.js')
 
     const productWithStringSizes = {
       ...baseProduct,
@@ -70,7 +70,7 @@ describe('API normalizeProduct (через fetchAllProducts)', () => {
   })
 
   it('парсит images из JSON-строки', async () => {
-    const { fetchAllProducts } = await import('../../../my-app/src/services/api.js')
+    const { fetchAllProducts } = await import('../../../frontend/src/services/api.js')
 
     const productWithStringImages = {
       ...baseProduct,
@@ -86,7 +86,7 @@ describe('API normalizeProduct (через fetchAllProducts)', () => {
   })
 
   it('оборачивает одиночный URL в массив', async () => {
-    const { fetchAllProducts } = await import('../../../my-app/src/services/api.js')
+    const { fetchAllProducts } = await import('../../../frontend/src/services/api.js')
 
     const productWithSingleImage = {
       ...baseProduct,
@@ -102,7 +102,7 @@ describe('API normalizeProduct (через fetchAllProducts)', () => {
   })
 
   it('возвращает пустой массив images если null', async () => {
-    const { fetchAllProducts } = await import('../../../my-app/src/services/api.js')
+    const { fetchAllProducts } = await import('../../../frontend/src/services/api.js')
 
     const productWithNullImages = {
       ...baseProduct,
@@ -118,7 +118,7 @@ describe('API normalizeProduct (через fetchAllProducts)', () => {
   })
 
   it('парсит composition из JSON-строки', async () => {
-    const { fetchAllProducts } = await import('../../../my-app/src/services/api.js')
+    const { fetchAllProducts } = await import('../../../frontend/src/services/api.js')
 
     const productWithStringComposition = {
       ...baseProduct,
@@ -134,7 +134,7 @@ describe('API normalizeProduct (через fetchAllProducts)', () => {
   })
 
   it('бросает ошибку если success: false', async () => {
-    const { fetchAllProducts } = await import('../../../my-app/src/services/api.js')
+    const { fetchAllProducts } = await import('../../../frontend/src/services/api.js')
 
     vi.mocked(axios.get).mockResolvedValueOnce({
       data: { success: false, error: 'Server error' },

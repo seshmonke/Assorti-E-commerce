@@ -57,7 +57,7 @@
 
 ### 1. Backend — установка переменных окружения
 
-Отредактируйте `backend-new/.env`:
+Отредактируйте `backend/.env`:
 
 ```env
 # JWT секреты (измените на боевые значения)
@@ -79,7 +79,7 @@ NODE_ENV="production"
 ### 2. Frontend — убедитесь, что установлены зависимости
 
 ```bash
-cd my-app
+cd frontend
 npm install @tma.js/sdk
 ```
 
@@ -87,14 +87,14 @@ npm install @tma.js/sdk
 
 **Backend:**
 ```bash
-cd backend-new
+cd backend
 npm run dev
 # Слушает на http://localhost:3000
 ```
 
 **Frontend:**
 ```bash
-cd my-app
+cd frontend
 npm run dev
 # Слушает на http://localhost:5173
 ```

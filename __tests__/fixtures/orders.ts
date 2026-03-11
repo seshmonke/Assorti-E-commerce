@@ -1,4 +1,4 @@
-import type { IOrder, IBrowserUser } from '../../backend-new/src/types/index.js'
+import type { IOrder, IBrowserUser } from '../../backend/src/types/index.js'
 import { mockProduct, mockProductOnSale } from './products.js'
 
 export const mockBrowserUser: IBrowserUser = {

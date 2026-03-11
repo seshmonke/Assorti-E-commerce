@@ -8,9 +8,9 @@
 
 ### Файлы
 
-- **`backend-new/src/utils/authLogger.ts`** — утилита для логирования авторизации с функциями для каждого события
-- **`backend-new/src/controllers/authController.ts`** — контроллер авторизации с добавленным логированием
-- **`backend-new/src/middleware/auth.ts`** — middleware проверки токенов с логированием отказов
+- **`backend/src/utils/authLogger.ts`** — утилита для логирования авторизации с функциями для каждого события
+- **`backend/src/controllers/authController.ts`** — контроллер авторизации с добавленным логированием
+- **`backend/src/middleware/auth.ts`** — middleware проверки токенов с логированием отказов
 
 ### Места логирования
 
@@ -61,7 +61,7 @@
 ## Расположение логов
 
 ```
-backend-new/logs/
+backend/logs/
 ├── app.log       # Общие логи всех HTTP запросов
 └── auth.log      # Специальные логи событий авторизации
 ```

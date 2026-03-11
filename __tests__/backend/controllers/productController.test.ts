@@ -2,15 +2,15 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { Request, Response, NextFunction } from 'express'
 
 // Мокаем Prisma и зависимости ДО импорта контроллера
-vi.mock('../../../backend-new/src/lib/prisma.js', () => ({
+vi.mock('../../../backend/src/lib/prisma.js', () => ({
   prisma: {},
 }))
-vi.mock('../../../backend-new/src/utils/authLogger.js', () => ({
+vi.mock('../../../backend/src/utils/authLogger.js', () => ({
   logAuthDenied: vi.fn(),
 }))
 
 // Мокаем ProductModel
-vi.mock('../../../backend-new/src/models/productModel.js', () => ({
+vi.mock('../../../backend/src/models/productModel.js', () => ({
   ProductModel: {
     findAll: vi.fn(),
     findById: vi.fn(),
@@ -25,8 +25,8 @@ vi.mock('../../../backend-new/src/models/productModel.js', () => ({
   },
 }))
 
-import { ProductController } from '../../../backend-new/src/controllers/productController.js'
-import { ProductModel } from '../../../backend-new/src/models/productModel.js'
+import { ProductController } from '../../../backend/src/controllers/productController.js'
+import { ProductModel } from '../../../backend/src/models/productModel.js'
 import { mockProduct, mockProducts, mockArchivedProduct, mockProductOnSale } from '../../fixtures/products.js'
 
 // Хелпер для создания мок req/res/next

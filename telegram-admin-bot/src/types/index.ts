@@ -85,6 +85,12 @@ export interface Order {
   paymentId: string | null;
   confirmationUrl: string | null;
   telegramUserId: string | null;
+  deliveryType: 'delivery' | 'pickup';
+  deliveryCity: string | null;
+  deliveryPvzCode: string | null;
+  deliveryPvzAddress: string | null;
+  deliveryPrice: number | null;
+  trackNumber: string | null;
   createdAt: string;
   updatedAt: string;
 }

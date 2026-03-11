@@ -13,8 +13,8 @@
     "noEmit": true,
     "baseUrl": ".",
     "paths": {
-      "@backend/*": ["./backend-new/src/*"],
-      "@frontend/*": ["./my-app/src/*"]
+      "@backend/*": ["./backend/src/*"],
+      "@frontend/*": ["./frontend/src/*"]
     }
   },
   "include": [
@@ -23,7 +23,7 @@
     "vitest.config.ts"
   ],
   "references": [
-    { "path": "./backend-new" },
-    { "path": "./my-app" }
+    { "path": "./backend" },
+    { "path": "./frontend" }
   ]
 }

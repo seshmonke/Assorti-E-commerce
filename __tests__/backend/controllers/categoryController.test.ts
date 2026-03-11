@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { Request, Response, NextFunction } from 'express'
 
-vi.mock('../../../backend-new/src/lib/prisma.js', () => ({ prisma: {} }))
-vi.mock('../../../backend-new/src/utils/authLogger.js', () => ({ logAuthDenied: vi.fn() }))
+vi.mock('../../../backend/src/lib/prisma.js', () => ({ prisma: {} }))
+vi.mock('../../../backend/src/utils/authLogger.js', () => ({ logAuthDenied: vi.fn() }))
 
-vi.mock('../../../backend-new/src/models/categoryModel.js', () => ({
+vi.mock('../../../backend/src/models/categoryModel.js', () => ({
   CategoryModel: {
     findAll: vi.fn(),
     findById: vi.fn(),
@@ -16,8 +16,8 @@ vi.mock('../../../backend-new/src/models/categoryModel.js', () => ({
   },
 }))
 
-import { CategoryController } from '../../../backend-new/src/controllers/categoryController.js'
-import { CategoryModel } from '../../../backend-new/src/models/categoryModel.js'
+import { CategoryController } from '../../../backend/src/controllers/categoryController.js'
+import { CategoryModel } from '../../../backend/src/models/categoryModel.js'
 import { mockCategory, mockCategories } from '../../fixtures/categories.js'
 
 function createMockReqRes(overrides: Partial<Request> = {}) {

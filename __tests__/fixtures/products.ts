@@ -1,4 +1,4 @@
-import type { IProduct } from '../../backend-new/src/types/index.js'
+import type { IProduct } from '../../backend/src/types/index.js'
 import { mockCategory } from './categories.js'
 
 export const mockProduct: IProduct = {

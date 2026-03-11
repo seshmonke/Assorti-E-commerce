@@ -28,7 +28,7 @@
 Telegram → @BotFather → /newbot → скопировать токен
 ```
 
-### 2. Настроить .env в backend-new/
+### 2. Настроить .env в backend/
 ```env
 JWT_SECRET="your-secret-key"
 JWT_REFRESH_SECRET="your-refresh-secret"
@@ -39,10 +39,10 @@ NODE_ENV="development"
 ### 3. Запустить приложение
 ```bash
 # Terminal 1 — Backend
-cd backend-new && npm run dev
+cd backend && npm run dev
 
 # Terminal 2 — Frontend
-cd my-app && npm run dev
+cd frontend && npm run dev
 ```
 
 ### 4. Открыть Telegram Mini App
@@ -54,19 +54,19 @@ cd my-app && npm run dev
 
 | Файл | Статус | Описание |
 |------|--------|----------|
-| `backend-new/prisma/schema.prisma` | ✅ Обновлён | Добавлена модель User |
-| `backend-new/prisma/migrations/*` | ✅ Новая | Миграция для User таблицы |
-| `backend-new/src/services/authService.ts` | ✅ Новый | Валидация, JWT, findOrCreateUser |
-| `backend-new/src/controllers/authController.ts` | ✅ Новый | signin, refresh, logout endpoints |
-| `backend-new/src/routes/authRoutes.ts` | ✅ Новый | Auth маршруты |
-| `backend-new/src/middleware/auth.ts` | ✅ Обновлён | JWT верификация вместо заглушки |
-| `backend-new/src/app.ts` | ✅ Обновлён | cookie-parser, auth routes, credentials |
-| `backend-new/src/types/index.ts` | ✅ Обновлён | IUser, CreateUserDTO, AuthPayload |
-| `backend-new/.env` | ✅ Обновлён | JWT и Telegram переменные |
-| `my-app/src/store/authSlice.ts` | ✅ Новый | Redux slice для auth |
-| `my-app/src/store/store.ts` | ✅ Обновлён | Подключен authReducer |
-| `my-app/src/services/api.ts` | ✅ Обновлён | withCredentials: true |
-| `my-app/src/App.tsx` | ✅ Обновлён | Telegram SDK интеграция, signIn |
+| `backend/prisma/schema.prisma` | ✅ Обновлён | Добавлена модель User |
+| `backend/prisma/migrations/*` | ✅ Новая | Миграция для User таблицы |
+| `backend/src/services/authService.ts` | ✅ Новый | Валидация, JWT, findOrCreateUser |
+| `backend/src/controllers/authController.ts` | ✅ Новый | signin, refresh, logout endpoints |
+| `backend/src/routes/authRoutes.ts` | ✅ Новый | Auth маршруты |
+| `backend/src/middleware/auth.ts` | ✅ Обновлён | JWT верификация вместо заглушки |
+| `backend/src/app.ts` | ✅ Обновлён | cookie-parser, auth routes, credentials |
+| `backend/src/types/index.ts` | ✅ Обновлён | IUser, CreateUserDTO, AuthPayload |
+| `backend/.env` | ✅ Обновлён | JWT и Telegram переменные |
+| `frontend/src/store/authSlice.ts` | ✅ Новый | Redux slice для auth |
+| `frontend/src/store/store.ts` | ✅ Обновлён | Подключен authReducer |
+| `frontend/src/services/api.ts` | ✅ Обновлён | withCredentials: true |
+| `frontend/src/App.tsx` | ✅ Обновлён | Telegram SDK интеграция, signIn |
 | `AUTH_SETUP.md` | ✅ Новый | Подробная документация |
 
 ---

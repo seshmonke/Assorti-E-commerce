@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { Request, Response, NextFunction } from 'express'
-import { errorHandler } from '../../../backend-new/src/middleware/errorHandler.js'
+import { errorHandler } from '../../../backend/src/middleware/errorHandler.js'
 
 function createMockReqRes() {
   const req = {} as Request

@@ -1,4 +1,4 @@
-import type { ICategory } from '../../backend-new/src/types/index.js'
+import type { ICategory } from '../../backend/src/types/index.js'
 
 export const mockCategory: ICategory = {
   id: 'cat-001',

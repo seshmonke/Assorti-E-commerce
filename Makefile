@@ -6,22 +6,22 @@ dev:
 	$(MAKE) -j3 dev-frontend dev-backend dev-bot
 
 dev-frontend:
-	cd my-app && npm run dev
+	cd frontend && npm run dev
 
 dev-backend:
-	cd backend-new && npm run dev
+	cd backend && npm run dev
 
 dev-bot:
 	cd telegram-admin-bot && npm run dev
 
 ## Сборка и деплой фронтенда на продакшн
 deploy-frontend:
-	cd my-app && npm run build
-	cp -r my-app/dist/. /var/www/my-app/
-	@echo "✅ Фронтенд задеплоен в /var/www/my-app/"
+	cd frontend && npm run build
+	cp -r frontend/dist/. /var/www/frontend/
+	@echo "✅ Фронтенд задеплоен в /var/www/frontend/"
 
 ## Установка зависимостей во всех проектах
 install:
-	cd my-app && npm install
-	cd backend-new && npm install
+	cd frontend && npm install
+	cd backend && npm install
 	cd telegram-admin-bot && npm install

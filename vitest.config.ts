@@ -13,12 +13,12 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'html', 'json'],
       include: [
-        'backend-new/src/**/*.{ts,tsx}',
-        'my-app/src/**/*.{ts,tsx}',
+        'backend/src/**/*.{ts,tsx}',
+        'frontend/src/**/*.{ts,tsx}',
       ],
       exclude: [
-        'backend-new/src/**/*.d.ts',
-        'my-app/src/**/*.d.ts',
+        'backend/src/**/*.d.ts',
+        'frontend/src/**/*.d.ts',
         'node_modules/**',
         '**/dist/**',
       ],
@@ -26,9 +26,9 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@backend': path.resolve(__dirname, './backend-new/src'),
-      '@frontend': path.resolve(__dirname, './my-app/src'),
-      'axios': path.resolve(__dirname, './my-app/node_modules/axios/index.js'),
+      '@backend': path.resolve(__dirname, './backend/src'),
+      '@frontend': path.resolve(__dirname, './frontend/src'),
+      'axios': path.resolve(__dirname, './frontend/node_modules/axios/index.js'),
     },
   },
   define: {

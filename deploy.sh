@@ -9,9 +9,9 @@ set -euo pipefail
 
 # ── Paths ─────────────────────────────────────────────────────
 BASE_DIR="/root/sofar5"
-FRONTEND_DIR="$BASE_DIR/my-app"
-BACKEND_DIR="$BASE_DIR/backend-new"
-DIST_DIR="/var/www/my-app"
+FRONTEND_DIR="$BASE_DIR/frontend"
+BACKEND_DIR="$BASE_DIR/backend"
+DIST_DIR="/var/www/frontend"
 LOG_FILE="/var/www/sofar5/deploy.log"
 
 # ── Telegram notifications (optional) ────────────────────────
@@ -167,18 +167,10 @@ echo_green "Backend: generated/ copied to dist/generated/ OK"
 # ── 3. PM2 ───────────────────────────────────────────────────
 echo_yellow "── [3/4] PM2 processes ──────────────────"
 
-pm2_restart() {
-  local name="$1"
-  if pm2 describe "$name" > /dev/null 2>&1; then
-    pm2 restart "$name" 2>&1 | tee -a "$LOG_FILE"
-    echo_green "PM2: $name restarted"
-  else
-    log_info "PM2: process '$name' not found, skipping"
-  fi
-}
-
-pm2_restart "backend"
-pm2_restart "telegram-bot"
+pm2 delete backend 2>/dev/null || true
+pm2 delete telegram-bot 2>/dev/null || true
+pm2 start "$BASE_DIR/ecosystem.config.cjs" 2>&1 | tee -a "$LOG_FILE"
+echo_green "PM2: processes started from ecosystem.config.cjs"
 
 pm2 save 2>&1 | tee -a "$LOG_FILE"
 echo_green "PM2: saved"

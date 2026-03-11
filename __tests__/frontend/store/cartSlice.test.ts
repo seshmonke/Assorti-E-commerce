@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { cartReducer, addToCart, removeFromCart, clearCart } from '../../../my-app/src/store/cartSlice.js'
-import type { Product } from '../../../my-app/src/services/api.js'
+import { cartReducer, addToCart, removeFromCart, clearCart } from '../../../frontend/src/store/cartSlice.js'
+import type { Product } from '../../../frontend/src/services/api.js'
 
 // Мок-продукт совместимый с типом Product из api.ts
 const productA: Product = {

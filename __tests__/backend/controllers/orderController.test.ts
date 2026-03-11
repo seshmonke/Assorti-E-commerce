@@ -1,14 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { Request, Response, NextFunction } from 'express'
 
-vi.mock('../../../backend-new/src/lib/prisma.js', () => ({
+vi.mock('../../../backend/src/lib/prisma.js', () => ({
   prisma: {
     $transaction: vi.fn(),
   },
 }))
-vi.mock('../../../backend-new/src/utils/authLogger.js', () => ({ logAuthDenied: vi.fn() }))
+vi.mock('../../../backend/src/utils/authLogger.js', () => ({ logAuthDenied: vi.fn() }))
 
-vi.mock('../../../backend-new/src/models/orderModel.js', () => ({
+vi.mock('../../../backend/src/models/orderModel.js', () => ({
   OrderModel: {
     findAll: vi.fn(),
     findById: vi.fn(),
@@ -20,7 +20,7 @@ vi.mock('../../../backend-new/src/models/orderModel.js', () => ({
   },
 }))
 
-vi.mock('../../../backend-new/src/models/productModel.js', () => ({
+vi.mock('../../../backend/src/models/productModel.js', () => ({
   ProductModel: {
     findAll: vi.fn(),
     findById: vi.fn(),
@@ -35,10 +35,10 @@ vi.mock('../../../backend-new/src/models/productModel.js', () => ({
   },
 }))
 
-import { OrderController } from '../../../backend-new/src/controllers/orderController.js'
-import { OrderModel } from '../../../backend-new/src/models/orderModel.js'
-import { ProductModel } from '../../../backend-new/src/models/productModel.js'
-import { prisma } from '../../../backend-new/src/lib/prisma.js'
+import { OrderController } from '../../../backend/src/controllers/orderController.js'
+import { OrderModel } from '../../../backend/src/models/orderModel.js'
+import { ProductModel } from '../../../backend/src/models/productModel.js'
+import { prisma } from '../../../backend/src/lib/prisma.js'
 import { mockOrder, mockOrders, mockPaidOrder, mockCancelledOrder } from '../../fixtures/orders.js'
 import { mockProduct } from '../../fixtures/products.js'
 
